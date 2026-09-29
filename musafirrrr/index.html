@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Musafirrrr — All group trips. One place.</title>
+<meta name="description" content="Discover upcoming group trips from trusted travel communities and organizers across India. Search by destination, dates and budget, then connect directly with the organizer." />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="src/assets/logo.jpeg">
+
+<!-- Global styles -->
+<link rel="stylesheet" href="assets/css/styles.css">
+
+<!-- Tailwind (CDN) + our theme config (config must come right after the CDN script) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="src/config/tailwind.config.js"></script>
+</head>
+<body>
+<!-- React mounts here -->
+<div id="root"></div>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+
+<!--
+  APPLICATION SCRIPTS — ORDER MATTERS (each file uses things defined above it).
+  1 config -> 2 utils/assets -> 3 data -> 4 backend -> 5 middleware
+  -> 6 UI components -> 7 pages -> 8 App -> 9 main (starts the app)
+-->
+
+<!-- 1. CONFIG -->
+<script src="src/config/constants.js"></script>
+
+<!-- 1b. REACT GLOBALS -->
+<script src="src/core/react-globals.js"></script>
+
+<!-- 2. UTILITIES -->
+<script src="src/utils/helpers.js"></script>
+<script src="src/utils/format.js"></script>
+<script src="src/utils/links.js"></script>
+
+<!-- 2b. ASSETS (images + icons) -->
+<script src="src/assets/imagery.js"></script>
+<script src="src/assets/icons.js"></script>
+
+<!-- 3. SEED DATA -->
+<script src="src/data/organizers.data.js"></script>
+<script src="src/data/trip.factory.js"></script>
+<script src="src/data/trips.data.js"></script>
+<script src="src/data/users.data.js"></script>
+<script src="src/data/enquiries.data.js"></script>
+
+<!-- 4. BACKEND (mock database + services) -->
+<script src="src/backend/store.js"></script>
+<script src="src/backend/services/auth.service.js"></script>
+<script src="src/backend/services/trip.service.js"></script>
+<script src="src/backend/services/organizer.service.js"></script>
+<script src="src/backend/services/wishlist.service.js"></script>
+<script src="src/backend/services/enquiry.service.js"></script>
+
+<!-- 5. MIDDLEWARE (hooks, router, guard, toast) -->
+<script src="src/middleware/store.hooks.js"></script>
+<script src="src/middleware/toast.js"></script>
+<script src="src/middleware/router.js"></script>
+<script src="src/middleware/auth.guard.js"></script>
+
+<!-- 6a. UI COMPONENTS -->
+<script src="src/components/ui/Icon.js"></script>
+<script src="src/components/ui/Button.js"></script>
+<script src="src/components/ui/Form.js"></script>
+<script src="src/components/ui/Badges.js"></script>
+<script src="src/components/ui/Modal.js"></script>
+<script src="src/components/ui/Feedback.js"></script>
+<script src="src/components/ui/Layout.js"></script>
+
+<!-- 6b. SHARED COMPONENTS -->
+<script src="src/components/shared/TripCard.js"></script>
+<script src="src/components/shared/ContactButtons.js"></script>
+<script src="src/components/shared/SearchBar.js"></script>
+
+<!-- 6c. LAYOUT COMPONENTS -->
+<script src="src/components/layout/Logo.js"></script>
+<script src="src/components/layout/Navbar.js"></script>
+<script src="src/components/layout/MobileTabs.js"></script>
+<script src="src/components/layout/Footer.js"></script>
+
+<!-- 7a. PUBLIC PAGES -->
+<script src="src/pages/public/HomePage.js"></script>
+<script src="src/pages/public/ExplorePage.js"></script>
+<script src="src/pages/public/TripDetailPage.js"></script>
+<script src="src/pages/public/OrganizerPage.js"></script>
+<script src="src/pages/public/HowItWorksPage.js"></script>
+<script src="src/pages/public/ForCommunitiesPage.js"></script>
+
+<!-- 7b. AUTH PAGES -->
+<script src="src/pages/auth/AuthShell.js"></script>
+<script src="src/pages/auth/LoginPage.js"></script>
+<script src="src/pages/auth/SignupPage.js"></script>
+
+<!-- 7c. TRAVELLER PAGES -->
+<script src="src/pages/traveller/SavedPage.js"></script>
+<script src="src/pages/traveller/TravellerDashboard.js"></script>
+<script src="src/pages/traveller/TravellerMyTrips.js"></script>
+<script src="src/pages/traveller/TravellerProfile.js"></script>
+
+<!-- 7d. ORGANIZER PAGES -->
+<script src="src/pages/organizer/OrganizerShell.js"></script>
+<script src="src/pages/organizer/OrganizerDashboard.js"></script>
+<script src="src/pages/organizer/OrganizerLeads.js"></script>
+<script src="src/pages/organizer/OrganizerTrips.js"></script>
+<script src="src/pages/organizer/TripWizard.js"></script>
+<script src="src/pages/organizer/OrganizerProfileEdit.js"></script>
+<script src="src/pages/organizer/OrganizerSettings.js"></script>
+
+<!-- 8. ROOT APP -->
+<script src="src/App.js"></script>
+
+<!-- 9. ENTRY POINT (must be last) -->
+<script src="src/main.js"></script>
+</body>
+</html>

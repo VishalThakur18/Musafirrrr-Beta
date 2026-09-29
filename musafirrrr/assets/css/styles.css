@@ -1,0 +1,31 @@
+/* ============================================================
+   GLOBAL STYLES — Musafirrrr
+   Base resets, animations (fade-in, sheet-up, shimmer), scroll helpers.
+   Most styling comes from Tailwind classes inside the components;
+   theme colours live in src/config/tailwind.config.js.
+   ============================================================ */
+  :root{
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light;
+    --bg:beige;
+  }
+  :root:not([data-theme="light"]){ color-scheme: light; }
+  html{ scroll-padding-top: env(safe-area-inset-top, 0px); scroll-behavior:smooth; }
+  *,*::before,*::after{ box-sizing:border-box; }
+  body{ margin:0; background:whitesmoke; color:#132025; font-family:"Plus Jakarta Sans",system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  ::selection{ background:#BFA68E; color:#132025; }
+  .u-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .u-scroll::-webkit-scrollbar{ display:none; }
+  .fade-in{ animation: fade .22s ease both; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+  .sheet-up{ animation: sheet .24s cubic-bezier(.22,.8,.3,1) both; }
+  @keyframes sheet{ from{transform:translateY(24px); opacity:.4} to{transform:none; opacity:1} }
+  .shimmer{ background:linear-gradient(90deg,#F1ECE5 25%,#E7E0D7 37%,#F1ECE5 63%); background-size:400% 100%; animation: sh 1.4s ease infinite; }
+  @keyframes sh{ 0%{background-position:100% 0} 100%{background-position:0 0} }
+  input,select,textarea,button{ font-family:inherit; }
+  a{ color:inherit; }
+  :focus-visible{ outline:2px solid #33464A; outline-offset:2px; border-radius:4px; }
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.01ms !important; transition-duration:.01ms !important; } html{scroll-behavior:auto} }
+  .no-scroll{ overflow:hidden; }
