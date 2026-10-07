@@ -6,7 +6,8 @@ const SUPABASE_ANON_KEY = "sb_publishable_4bnqpqpCRzVDHGyb_2JcZg_KtzUjVhN";
 
 window.sbClient = window.supabase.createClient(
   SUPABASE_URL,
-  SUPABASE_ANON_KEY
+  SUPABASE_ANON_KEY,
+  { auth: { flowType: "pkce" } }
 );
 
 console.log("Supabase initialized:", !!window.sbClient);

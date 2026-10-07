@@ -6,13 +6,24 @@
 /** Top navigation bar. */
 function Navbar() {
     const s = useStore();
-    const me = authService.current();
+    const { user: me, ready: authReady } = useAuth();
     const [open, setOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const route = useRoute();
     useEffect(() => { const f = () => setScrolled(window.scrollY > 12); f(); window.addEventListener('scroll', f, { passive: true }); return () => window.removeEventListener('scroll', f); }, []);
     useEffect(() => { setOpen(false); }, [route]);
     const savedCount = s.wishlist.length;
+
+    const logout = async () => {
+        try {
+            await authService.logout();   // also clears the shared auth state
+            go('/');
+            toast('Logged out');
+        } catch (x) {
+            toast(x.message || 'Could not log out. Try again.');
+        }
+    };
+
     return (React.createElement("header", { className: cls('sticky z-50 bg-white/92 backdrop-blur-md transition-shadow duration-200', scrolled ? 'shadow-[0_1px_0_#E7E0D7,0_8px_24px_-20px_rgba(19,32,37,.4)]' : 'border-b border-line'), style: { top: 'env(safe-area-inset-top,0px)' } },
         React.createElement("div", { className: "max-w-shell mx-auto px-5 lg:px-8" },
             React.createElement("div", { className: "h-16 md:h-[72px] flex items-center gap-6" },
@@ -26,7 +37,7 @@ function Navbar() {
                         React.createElement(Icon, { name: "heart", size: 17, fill: savedCount ? 'currentColor' : 'none', className: savedCount ? 'text-bad' : '' }),
                         " Saved",
                         savedCount > 0 && React.createElement("span", { className: "text-[12px] font-bold text-ink" }, savedCount)),
-                    !me && React.createElement(React.Fragment, null,
+                    authReady && !me && React.createElement(React.Fragment, null,
                         React.createElement(Link, { to: "/for-communities", className: "hidden md:inline-flex items-center px-3 h-10 rounded-full text-[14.5px] font-medium text-slatey hover:bg-sand hover:text-ink transition-colors" }, "List a trip"),
                         React.createElement(Btn, { size: "sm", variant: "ghost", className: "hidden sm:inline-flex", onClick: () => go('/login') }, "Log in"),
                         React.createElement(Btn, { size: "sm", onClick: () => go('/signup'), className: "hidden sm:inline-flex" }, "Sign up")),
@@ -50,7 +61,7 @@ function Navbar() {
                 React.createElement("div", { className: "h-px bg-line my-2" }),
                 me ? React.createElement(React.Fragment, null,
                     React.createElement(Link, { to: me.role === 'ORGANIZER' ? '/organizer/dashboard' : '/traveller/dashboard', className: "py-2.5" }, "Dashboard"),
-                    React.createElement("button", { className: "py-2.5 text-left text-bad", onClick: () => { authService.logout(); go('/'); toast('Logged out'); } }, "Log out")) : React.createElement("div", { className: "flex gap-3 pt-1" },
+                    React.createElement("button", { className: "py-2.5 text-left text-bad", onClick: logout }, "Log out")) : authReady && React.createElement("div", { className: "flex gap-3 pt-1" },
                     React.createElement(Btn, { variant: "outline", className: "flex-1", onClick: () => go('/login') }, "Log in"),
                     React.createElement(Btn, { className: "flex-1", onClick: () => go('/signup') }, "Sign up")))))));
 }
