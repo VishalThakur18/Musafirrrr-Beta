@@ -6,7 +6,7 @@
 /** Organizer dashboard. */
 function OrganizerDashboard() {
     const s = useStore();
-    const me = authService.current();
+    const me = authService.useAuth();
     const org = organizerService.byId(me.organizerId);
     const trips = tripService.byOrganizer(org.id);
     const active = trips.filter(t => t.status === 'PUBLISHED');

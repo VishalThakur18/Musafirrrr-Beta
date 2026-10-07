@@ -6,7 +6,7 @@
 /** Traveller dashboard. */
 function TravellerDashboard() {
     const s = useStore();
-    const me = authService.current();
+    const me = authService.useAuth();
     const mine = enquiryService.forTraveller(me.id).filter(e => e.status !== 'CANCELLED');
     const upcoming = mine.map(e => ({ e, t: tripService.byId(e.tripId) })).filter(x => x.t);
     const saved = wishlistService.trips().slice(0, 4);

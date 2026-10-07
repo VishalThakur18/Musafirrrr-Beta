@@ -5,3 +5,5 @@
    ============================================================ */
 
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+
+authService.init().catch(err => console.error("Auth init failed:", err));

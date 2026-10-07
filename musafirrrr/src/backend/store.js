@@ -31,17 +31,24 @@ const store = {
     state: {
         trips: saved.trips || TRIPS,
         organizers: saved.organizers || ORGANIZERS,
-        users: saved.users || USERS,
+        users: { ...saved.users },
         enquiries: saved.enquiries || ENQUIRIES,
         wishlist: saved.wishlist || [], // trip ids — works logged out
-        session: saved.session || null, // userId
+        session: null,
         recent: saved.recent || [],
         toasts: []
     },
     subs: new Set(),
     persist() {
         const s = this.state;
-        const ok = lsSet(LS_KEY, { trips: s.trips, organizers: s.organizers, users: s.users, enquiries: s.enquiries, wishlist: s.wishlist, session: s.session, recent: s.recent });
+        const ok = lsSet(LS_KEY, {
+            trips: s.trips,
+            organizers: s.organizers,
+            users: s.users,
+            enquiries: s.enquiries,
+            wishlist: s.wishlist,
+            recent: s.recent
+        });
         if (!ok)
             console.warn('Local storage unavailable — changes will not survive a refresh.');
     },

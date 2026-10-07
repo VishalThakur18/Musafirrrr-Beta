@@ -13,8 +13,7 @@ function setMeta(title, desc) {
 }
 
 /** Sends a logged-in user to their dashboard. */
-function RedirectHome() {
-    const me = authService.current();
+function RedirectHome({ me }) {
     useEffect(() => { go(me.role === 'ORGANIZER' ? '/organizer/dashboard' : '/traveller/dashboard'); }, []);
     return null;
 }
@@ -24,7 +23,7 @@ function App() {
     const s = useStore();
     const hash = useRoute();
     const { path, parts, params } = parsePath(hash);
-    const me = authService.current();
+    const { user: me, ready } = useAuth();
     useEffect(() => {
         if (parts[0] === 'trip' && parts[1]) {
             const t = tripService.bySlug(parts[1]);
@@ -58,9 +57,9 @@ function App() {
     else if (path === '/for-communities')
         page = React.createElement(ForCommunitiesPage, null);
     else if (path === '/login')
-        page = me ? React.createElement(RedirectHome, null) : React.createElement(LoginPage, { params: params });
+    page = !ready ? null : me ? React.createElement(RedirectHome, { me: me }) : React.createElement(LoginPage, { params: params });
     else if (path === '/signup')
-        page = me ? React.createElement(RedirectHome, null) : React.createElement(SignupPage, { params: params });
+    page = !ready ? null : me ? React.createElement(RedirectHome, { me: me }) : React.createElement(SignupPage, { params: params });
     else if (path === '/saved')
         page = React.createElement(SavedPage, null);
     else if (path === '/traveller/dashboard')
