@@ -12,22 +12,22 @@ function SignupPage({ params }) {
     const [t, setT] = useState({ name: '', email: '', phone: '', password: '' });
     const [o, setO] = useState({ orgName: '', name: '', email: '', phone: '', password: '', city: '', instagram: '', whatsapp: '', bio: '' });
     const resend = async () => {
-    setBusy(true);
-    try {
-        await authService.resendConfirmation(sent);
-        toast("Confirmation email sent again.");
-    } catch (x) {
-        toast(x.message);
-    } finally {
-        setBusy(false);
-    }
-};
-if (sent)
-    return React.createElement(AuthShell, { title: "Check your email", sub: "We sent a confirmation link to " + sent + ". Click it to activate your account." },
-        React.createElement("div", { className: "mt-8 space-y-3" },
-            React.createElement(Btn, { variant: "outline", className: "w-full", loading: busy, onClick: resend }, "Resend email"),
-            React.createElement("p", { className: "text-[13.5px] text-slatey" }, "Can't find it? Check your spam folder."),
-            React.createElement(Link, { to: "/login", className: "font-semibold underline underline-offset-4 text-[14px]" }, "Back to log in")));
+        setBusy(true);
+        try {
+            await authService.resendConfirmation(sent);
+            toast("Confirmation email sent again.");
+        } catch (x) {
+            toast(x.message);
+        } finally {
+            setBusy(false);
+        }
+    };
+    if (sent)
+        return React.createElement(AuthShell, { title: "Check your email", sub: "We sent a confirmation link to " + sent + ". Click it to activate your account." },
+            React.createElement("div", { className: "mt-8 space-y-3" },
+                React.createElement(Btn, { variant: "outline", className: "w-full", loading: busy, onClick: resend }, "Resend email"),
+                React.createElement("p", { className: "text-[13.5px] text-slatey" }, "Can't find it? Check your spam folder."),
+                React.createElement(Link, { to: "/login", className: "font-semibold underline underline-offset-4 text-[14px]" }, "Back to log in")));
     if (!role)
         return (React.createElement(AuthShell, { title: "Welcome to Musafirrrr", sub: "Two ways in. Pick the one that sounds like you." },
             React.createElement("div", { className: "mt-8 space-y-3.5" }, [['TRAVELLER', 'I\'m a traveller', 'Find group trips, save the ones you like and enquire directly.', 'compass'],
@@ -61,16 +61,15 @@ if (sent)
             return;
         setBusy(true);
         try {
-            console.log("ABCD T", t);
-        const result = await authService.signupTraveller(t);
+            const result = await authService.signupTraveller(t);
 
-        if (result.confirmationRequired) {
-            setSent(result.email);
-            return;
-        }
+            if (result.confirmationRequired) {
+                setSent(result.email);
+                return;
+            }
 
-        toast("Account created. Happy travels, " + t.name.split(" ")[0]);
-        go("/traveller/dashboard");
+            toast("Account created. Happy travels, " + t.name.split(" ")[0]);
+            go("/traveller/dashboard");
         }
         catch (x) {
             setErr({ email: x.message });
@@ -85,15 +84,15 @@ if (sent)
             return;
         setBusy(true);
         try {
-        const result = await authService.signupOrganizer(o);
+            const result = await authService.signupOrganizer(o);
 
-        if (result.confirmationRequired) {
-            setSent(result.email);
-            return;
-        }
+            if (result.confirmationRequired) {
+                setSent(result.email);
+                return;
+            }
 
-        toast("Community profile created. Add your first trip.");
-        go("/organizer/create");
+            toast("Community profile created. Add your first trip.");
+            go("/organizer/create");
         } catch (x) {
         setErr({ email: x.message });
         } finally {

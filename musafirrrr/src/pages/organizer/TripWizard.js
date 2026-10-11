@@ -4,21 +4,31 @@
    (#/organizer/create and #/organizer/edit/:id)
    ============================================================ */
 
+const PHOTO_TYPES = /^image\/(jpeg|png|webp)$/;
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
 /** Photo picker used in the trip wizard. */
-/* ---------- image uploader ---------- */
 function ImageUploader({ images, onChange }) {
     const [drag, setDrag] = useState(false);
     const fileRef = useRef(null);
     const add = list => onChange([...images, ...list].slice(0, 8));
     const readFiles = files => {
-        const arr = Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, 8 - images.length);
+        const picked = Array.from(files);
+        if (picked.some(f => !PHOTO_TYPES.test(f.type)))
+            toast('Only JPG, PNG or WebP photos are supported.', 'bad');
+        const arr = picked.filter(f => PHOTO_TYPES.test(f.type)).slice(0, 8 - images.length);
         if (!arr.length)
             return;
+        const big = arr.find(f => f.size > MAX_PHOTO_BYTES);
+        if (big) {
+            toast(big.name + ' is larger than 5 MB.', 'bad');
+            return;
+        }
         let done = [];
         arr.forEach(f => {
             const r = new FileReader();
             r.onload = () => {
-                done = [...done, { k: 'file', url: r.result, name: f.name }];
+                done = [...done, { k: 'file', url: r.result, name: f.name, file: f }];
                 if (done.length === arr.length) {
                     add(done);
                     toast(arr.length + ' photo' + (arr.length > 1 ? 's' : '') + ' added');
@@ -41,9 +51,9 @@ function ImageUploader({ images, onChange }) {
             React.createElement("span", { className: "inline-flex w-12 h-12 rounded-full bg-shell text-earth items-center justify-center" },
                 React.createElement(Icon, { name: "img", size: 22 })),
             React.createElement("p", { className: "mt-3 font-semibold text-[15px]" }, "Drag photos here"),
-            React.createElement("p", { className: "text-[13.5px] text-muted mt-1" }, "JPG or PNG, up to 8 photos. The first one becomes the cover."),
+            React.createElement("p", { className: "text-[13.5px] text-muted mt-1" }, "JPG, PNG or WebP, up to 8 photos, 5 MB each. The first one becomes the cover."),
             React.createElement(Btn, { type: "button", variant: "outline", size: "sm", className: "mt-4", onClick: () => fileRef.current.click() }, "Choose files"),
-            React.createElement("input", { ref: fileRef, type: "file", accept: "image/*", multiple: true, className: "hidden", onChange: e => { readFiles(e.target.files); e.target.value = ''; } })),
+            React.createElement("input", { ref: fileRef, type: "file", accept: "image/jpeg,image/png,image/webp", multiple: true, className: "hidden", onChange: e => { readFiles(e.target.files); e.target.value = ''; } })),
         React.createElement("div", { className: "mt-5" },
             React.createElement("p", { className: "text-[13px] font-bold tracking-[.1em] text-muted mb-3" }, "OR PICK A STOCK SCENE"),
             React.createElement("div", { className: "flex gap-2.5 u-scroll pb-1" }, SCENE_KINDS.map((k, i) => (React.createElement("button", { key: k, type: "button", onClick: () => { add([{ k: 'scene', kind: k, seed: 100 + i * 7 + Math.floor(Math.random() * 50) }]); toast('Photo added'); }, className: "w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-line hover:border-ink transition-colors", title: k },
@@ -72,22 +82,52 @@ function ListEditor({ items, onChange, placeholder }) {
         React.createElement(Btn, { type: "button", variant: "outline", size: "sm", icon: "plus", onClick: () => onChange([...items, '']) }, "Add line")));
 }
 
-/** Create / edit trip wizard. */
+/** Database trip -> wizard form state. */
+function tripToForm(t, org) {
+    return {
+        title: t.title, destination: t.destination, region: t.region || '', startingFrom: t.startingLocation || '',
+        category: t.category, groupType: t.groupType, description: t.description || '',
+        startDate: t.startDate, endDate: t.endDate, days: t.days, nights: t.nights,
+        price: t.price, currency: t.currency || 'INR', advance: t.advanceAmount || 0,
+        totalSpots: t.totalSpots, availableSpots: t.availableSpots,
+        images: (t.images || []).map(url => ({ k: 'file', url })),
+        itinerary: t.itinerary.length ? t.itinerary.map((x, i) => ({ day: i + 1, title: x.title, detail: x.detail })) : [{ day: 1, title: '', detail: '' }],
+        included: t.included, excluded: t.excluded,
+        meetingPoint: t.meetingPoint || '',
+        whatsapp: org.whatsapp_number || '', instagram: org.instagram_handle || ''
+    };
+}
+
+/** Loads the trip when editing, then shows the form. */
 function TripWizard({ tripId }) {
-    const s = useStore();
-    const me = authService.current();
-    const org = organizerService.byId(me.organizerId);
-    const existing = tripId ? tripService.byId(tripId) : null;
+    const { user: me } = useAuth();
+    const org = me ? me.organizer : null;
+    const orgId = org ? org.id : null;
+    const { loading, error, data } = useAsync(
+        () => (tripId && orgId) ? organizerApi.tripForEdit(tripId, orgId) : Promise.resolve(null),
+        [tripId, orgId]
+    );
+    if (!org)
+        return React.createElement(EmptyState, { icon: "user", title: "Your community profile is missing", body: "We couldn't find your organizer profile. Please contact support." });
+    if (tripId && loading)
+        return React.createElement("p", { className: "text-slatey py-10" }, "Loading trip...");
+    if (tripId && (error || !data))
+        return React.createElement(EmptyState, { icon: "shield", title: "Trip not found", body: "This trip doesn't exist, or it isn't one of yours.", action: React.createElement(Btn, { onClick: () => go('/organizer/trips') }, "Back to my trips") });
+    return React.createElement(TripWizardForm, { key: tripId || 'new', me: me, org: org, existing: data });
+}
+
+/** The nine-step form. */
+function TripWizardForm({ me, org, existing }) {
+    // Shape the database organizer like the mock organizer the helpers expect
+    const orgView = { ...org, whatsapp: org.whatsapp_number, instagram: org.instagram_handle, city: org.based_in };
     const [step, setStep] = useState(0);
     const [err, setErr] = useState({});
     const [busy, setBusy] = useState(false);
-    const [f, setF] = useState(() => existing ? { ...existing,
-        whatsapp: org.whatsapp, instagram: org.instagram
-    } : {
+    const [f, setF] = useState(() => existing ? tripToForm(existing, org) : {
         title: '', destination: '', region: '', startingFrom: '', category: 'Backpacking', groupType: 'Mixed Group', description: '',
         startDate: '', endDate: '', days: 0, nights: 0, price: '', currency: 'INR', advance: 2000, totalSpots: 15, availableSpots: 15,
         images: [], itinerary: [{ day: 1, title: '', detail: '' }], included: [...INC_DEF], excluded: [...EXC_DEF],
-        meetingPoint: '', whatsapp: org.whatsapp, instagram: org.instagram, rating: 4.7, reviews: 0, status: 'DRAFT'
+        meetingPoint: '', whatsapp: org.whatsapp_number || '', instagram: org.instagram_handle || ''
     });
     const set = p => setF(x => ({ ...x, ...p }));
     useEffect(() => {
@@ -97,8 +137,6 @@ function TripWizard({ tripId }) {
                 set({ days, nights: Math.max(0, days - 1) });
         }
     }, [f.startDate, f.endDate]);
-    if (existing && existing.organizerId !== org.id)
-        return React.createElement(EmptyState, { icon: "shield", title: "Not your trip", body: "You can only edit trips listed by your own community.", action: React.createElement(Btn, { onClick: () => go('/organizer/trips') }, "Back to my trips") });
     const validateStep = i => {
         const e = {};
         if (i === 0) {
@@ -122,6 +160,8 @@ function TripWizard({ tripId }) {
         if (i === 2) {
             if (!(+f.price > 0))
                 e.price = 'Enter the price per person.';
+            else if ((+f.advance || 0) > +f.price)
+                e.advance = "The advance can't be more than the price.";
             if (!(+f.totalSpots > 0))
                 e.totalSpots = 'How many people can join?';
         }
@@ -143,16 +183,10 @@ function TripWizard({ tripId }) {
     const next = () => { if (validateStep(step))
         setStep(s_ => Math.min(WIZARD.length - 1, s_ + 1)); };
     const prev = () => setStep(s_ => Math.max(0, s_ - 1));
-    const build = status => ({
-        title: f.title.trim(), destination: f.destination.trim(), region: f.region.trim() || f.destination.trim(),
-        startingFrom: f.startingFrom.trim(), category: f.category, groupType: f.groupType, description: f.description.trim(),
-        startDate: f.startDate, endDate: f.endDate, days: f.days, nights: f.nights, price: +f.price, currency: f.currency, advance: +f.advance || 0,
-        totalSpots: +f.totalSpots, availableSpots: Math.min(+f.availableSpots, +f.totalSpots),
-        images: f.images, coverImage: f.images[0], itinerary: f.itinerary.filter(x => x.title.trim()).map((x, i) => ({ ...x, day: i + 1 })),
-        included: f.included.filter(Boolean), excluded: f.excluded.filter(Boolean), meetingPoint: f.meetingPoint.trim() || 'Shared with the group before departure',
-        status, rating: f.rating, reviews: f.reviews
-    });
+
     const save = async (status) => {
+        if (busy)
+            return;
         for (let i = 0; i < 8; i++) {
             if (!validateStep(i)) {
                 setStep(i);
@@ -161,32 +195,71 @@ function TripWizard({ tripId }) {
             }
         }
         setBusy(true);
-        await wait(600);
-        organizerService.update(org.id, { whatsapp: f.whatsapp, instagram: f.instagram });
-        if (existing) {
-            tripService.update(existing.id, build(status));
+        const uploaded = [];
+        try {
+            await organizerApi.updateContact(org.id, { whatsapp: f.whatsapp, instagram: f.instagram });
+
+            // Upload new photos; keep already-saved ones as they are
+            const urls = [];
+            for (const im of f.images) {
+                if (im.file) {
+                    const up = await organizerApi.uploadTripImage(im.file, me.id);
+                    uploaded.push(up.path);
+                    urls.push(up.url);
+                }
+                else if (im.k === 'scene') {
+                    const u = sceneURL(im.kind, im.seed);
+                    if (!/^https?:/.test(u))
+                        throw new Error("Stock scenes can't be saved yet. Please upload a photo instead.");
+                    urls.push(u);
+                }
+                else {
+                    urls.push(im.url);
+                }
+            }
+
+            const total = Math.round(+f.totalSpots);
+            const payload = {
+                title: f.title.trim(), destination: f.destination.trim(), region: f.region.trim(),
+                starting_location: f.startingFrom.trim(), category: f.category, group_type: f.groupType,
+                description: f.description.trim(),
+                start_date: f.startDate, end_date: f.endDate, duration_days: f.days, duration_nights: f.nights,
+                price: Math.round(+f.price), currency: f.currency, advance_amount: Math.round(+f.advance) || 0,
+                total_spots: total,
+                spots_left: Math.max(0, Math.min(Math.round(+f.availableSpots), total)),
+                meeting_point: f.meetingPoint.trim() || 'Shared with the group before departure',
+                status: status.toLowerCase(),
+                cover_image_url: urls[0],
+                images: urls,
+                itinerary: f.itinerary.filter(x => x.title.trim()).map(x => ({ title: x.title.trim(), description: (x.detail || '').trim() })),
+                included: f.included.map(x => x.trim()).filter(Boolean),
+                excluded: f.excluded.map(x => x.trim()).filter(Boolean)
+            };
+
+            await organizerApi.saveTrip(existing ? existing.id : null, payload);
+            await window.refreshAuth();   // pick up the new contact details
             toast(status === 'PUBLISHED' ? 'Trip published' : 'Draft saved');
+            go('/organizer/trips');
         }
-        else {
-            tripService.create(org.id, build(status));
-            toast(status === 'PUBLISHED' ? 'Trip published' : 'Draft saved');
+        catch (x) {
+            console.error(x);
+            if (uploaded.length)
+                organizerApi.removeTripImages(uploaded).catch(() => { });   // don't leave orphan files
+            toast(x.message || 'Could not save the trip. Try again.', 'bad');
         }
-        setBusy(false);
-        go('/organizer/trips');
+        finally {
+            setBusy(false);
+        }
     };
-    const preview = { ...f, id: 'preview', slug: 'preview', price: +f.price || 0, coverImage: f.images[0], organizerId: org.id,
+
+    const preview = { ...f, id: 'preview', slug: 'preview', status: 'PUBLISHED', price: +f.price || 0, coverImage: f.images[0], organizerId: org.id, organizer: orgView,
         availableSpots: +f.availableSpots || 0, totalSpots: +f.totalSpots || 0, days: f.days, nights: f.nights };
     return (React.createElement(React.Fragment, null,
         React.createElement("div", { className: "flex items-start justify-between gap-4 flex-wrap mb-6" },
             React.createElement("div", null,
                 React.createElement("h1", { className: "text-[28px] sm:text-[34px] font-extrabold tracking-[-0.03em] leading-tight" }, existing ? 'Edit trip' : 'Create a trip'),
                 React.createElement("p", { className: "text-[15px] text-slatey mt-1" },
-                    "Step ",
-                    step + 1,
-                    " of ",
-                    WIZARD.length,
-                    " \u00B7 ",
-                    WIZARD[step])),
+                    "Step ", step + 1, " of ", WIZARD.length, " \u00B7 ", WIZARD[step])),
             React.createElement(Btn, { variant: "ghost", onClick: () => go('/organizer/trips') }, "Cancel")),
         React.createElement("div", { className: "u-scroll -mx-5 px-5 md:mx-0 md:px-0 mb-7" },
             React.createElement("div", { className: "flex gap-1.5 min-w-max" }, WIZARD.map((w, i) => (React.createElement("button", { key: w, onClick: () => { if (i <= step || validateStep(step))
@@ -232,18 +305,14 @@ function TripWizard({ tripId }) {
                             React.createElement("option", null, "INR"),
                             React.createElement("option", null, "USD"),
                             React.createElement("option", null, "EUR"))),
-                    React.createElement(Field, { label: "Advance to hold a spot" },
+                    React.createElement(Field, { label: "Advance to hold a spot", error: err.advance },
                         React.createElement(Input, { type: "number", min: "0", step: "500", value: f.advance, onChange: e => set({ advance: e.target.value }) })),
                     React.createElement(Field, { label: "Total spots", error: err.totalSpots },
-                        React.createElement(Input, { type: "number", min: "1", value: f.totalSpots, onChange: e => set({ totalSpots: e.target.value, availableSpots: e.target.value }) })),
+                        React.createElement(Input, { type: "number", min: "1", value: f.totalSpots, onChange: e => set(existing ? { totalSpots: e.target.value } : { totalSpots: e.target.value, availableSpots: e.target.value }) })),
                     React.createElement(Field, { label: "Spots still open", className: "sm:col-span-2", hint: "You can change this any time from My trips." },
                         React.createElement(Input, { type: "number", min: "0", max: f.totalSpots, value: f.availableSpots, onChange: e => set({ availableSpots: e.target.value }) }))),
                 +f.price > 0 && React.createElement("div", { className: "rounded-xl bg-sand border border-line p-4 text-[14.5px]" },
-                    "Full group at ",
-                    INR(f.price),
-                    " \u00D7 ",
-                    f.totalSpots,
-                    " = ",
+                    "Full group at ", INR(f.price), " \u00D7 ", f.totalSpots, " = ",
                     React.createElement("strong", null, INR(+f.price * +f.totalSpots)))),
             step === 3 && React.createElement("div", null,
                 err.images && React.createElement("p", { className: "text-[13.5px] text-bad mb-3 flex items-center gap-1.5" },
@@ -256,9 +325,7 @@ function TripWizard({ tripId }) {
                     err.itinerary),
                 f.itinerary.map((day, i) => (React.createElement("div", { key: i, className: "rounded-xl border border-line p-4" },
                     React.createElement("div", { className: "flex items-center justify-between mb-3" },
-                        React.createElement("span", { className: "font-bold text-[14.5px]" },
-                            "Day ",
-                            i + 1),
+                        React.createElement("span", { className: "font-bold text-[14.5px]" }, "Day ", i + 1),
                         f.itinerary.length > 1 && React.createElement("button", { type: "button", onClick: () => set({ itinerary: f.itinerary.filter((_, k) => k !== i) }), className: "text-[13px] text-muted hover:text-bad" }, "Remove")),
                     React.createElement(Input, { value: day.title, placeholder: "Old Manali and Jogini Falls", onChange: e => { const n = [...f.itinerary]; n[i] = { ...n[i], title: e.target.value }; set({ itinerary: n }); } }),
                     React.createElement(TextArea, { rows: 2, className: "mt-2.5", value: day.detail, placeholder: "What happens on this day", onChange: e => { const n = [...f.itinerary]; n[i] = { ...n[i], detail: e.target.value }; set({ itinerary: n }); } })))),
@@ -276,7 +343,7 @@ function TripWizard({ tripId }) {
                     React.createElement(Input, { value: f.instagram, onChange: e => set({ instagram: e.target.value }), placeholder: "wanderlust.co" })),
                 React.createElement("div", { className: "rounded-xl bg-sand border border-line p-4" },
                     React.createElement("p", { className: "text-[13px] font-bold tracking-[.1em] text-muted" }, "MESSAGE TRAVELLERS WILL SEND YOU"),
-                    React.createElement("p", { className: "mt-2 text-[14.5px] text-slatey leading-relaxed" }, tripWaMessage({ title: f.title || 'your trip', destination: f.destination || '…', startDate: f.startDate || today(), endDate: f.endDate || today() }, org)))),
+                    React.createElement("p", { className: "mt-2 text-[14.5px] text-slatey leading-relaxed" }, tripWaMessage({ title: f.title || 'your trip', destination: f.destination || '…', startDate: f.startDate || today(), endDate: f.endDate || today() }, orgView)))),
             step === 8 && React.createElement("div", null,
                 React.createElement("p", { className: "text-[14.5px] text-slatey mb-5" }, "This is how your trip card appears in search, and the details travellers will read."),
                 React.createElement("div", { className: "max-w-[320px]" },

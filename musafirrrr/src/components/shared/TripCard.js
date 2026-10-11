@@ -31,11 +31,11 @@ function SpotsMeter({ trip, compact }) {
 
 /** Trip summary card. */
 function TripCard({ trip, compact }) {
-    const org = organizerService.byId(trip.organizerId);
+    const org = trip.organizer || organizerService.byId(trip.organizerId);
     const soon = daysUntil(trip.startDate);
     return (React.createElement(Link, { to: '/trip/' + trip.slug, className: "group block rounded-xl2 overflow-hidden bg-lightbeige border border-line hover:border-ink/25 hover:shadow-lift transition-all duration-200 focus-visible:shadow-lift" },
         React.createElement("div", { className: "relative aspect-[4/3] overflow-hidden bg-shell" },
-            React.createElement("img", { src: imgSrc(trip.coverImage), alt: trip.title + ' — ' + trip.destination, loading: "lazy", className: "w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.04]" }),
+             React.createElement("img", { src: imgSrc(coverOf(trip)), alt: trip.title + ' — ' + trip.destination, loading: "lazy", className: "w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.04]" }),
             React.createElement("div", { className: "absolute top-3 left-3 flex gap-2" },
                 React.createElement(Tag_, { tone: "ink", className: "backdrop-blur bg-ink/85" }, trip.category),
                 trip.status === 'SOLD_OUT' && React.createElement(Tag_, { tone: "bad" }, "Sold out"),
@@ -50,7 +50,7 @@ function TripCard({ trip, compact }) {
         React.createElement("div", { className: "p-4 sm:p-[18px]" },
             React.createElement("h3", { className: "text-[17px] font-bold leading-snug tracking-[-0.01em] text-ink" }, trip.title),
             React.createElement("div", { className: "mt-2 flex items-center gap-2 text-[13px] text-slatey" },
-                org && React.createElement(Avatar, { kind: org.logoKind, seed: org.logoSeed, size: 20, name: org.name }),
+                org && React.createElement(Avatar, { kind: org.logoKind || 'mountains', seed: org.logoSeed || 11, size: 20, name: org.name }),
                 React.createElement("span", { className: "truncate" }, org ? org.name : 'Independent organizer'),
                 org && org.verified && React.createElement(Icon, { name: "shield", size: 13, className: "text-ok shrink-0" })),
             React.createElement("div", { className: "mt-3 flex items-center gap-3 text-[13px] text-muted" },

@@ -57,9 +57,9 @@ function App() {
     else if (path === '/for-communities')
         page = React.createElement(ForCommunitiesPage, null);
     else if (path === '/login')
-    page = !ready ? null : me ? React.createElement(RedirectHome, { me: me }) : React.createElement(LoginPage, { params: params });
+        page = !ready ? null : me ? React.createElement(RedirectHome, { me: me }) : React.createElement(LoginPage, { params: params });
     else if (path === '/signup')
-    page = !ready ? null : me ? React.createElement(RedirectHome, { me: me }) : React.createElement(SignupPage, { params: params });
+        page = !ready ? null : me ? React.createElement(RedirectHome, { me: me }) : React.createElement(SignupPage, { params: params });
     else if (path === '/saved')
         page = React.createElement(SavedPage, null);
     else if (path === '/traveller/dashboard')
