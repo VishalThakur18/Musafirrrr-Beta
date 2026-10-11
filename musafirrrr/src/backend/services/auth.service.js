@@ -249,9 +249,9 @@ const authService = {
     }
 
     await ensureRoleRecords(data.user);
-const user = await window.getCurrentUser();
-await window.refreshAuth(user);
-return user;
+    const user = await window.getCurrentUser();
+    await window.refreshAuth(user);
+    return user;
   },
 
   async signupOrganizer(d) {
