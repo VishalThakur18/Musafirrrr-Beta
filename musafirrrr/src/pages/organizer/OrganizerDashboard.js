@@ -40,6 +40,7 @@ function OrganizerDashboard() {
         try {
             await organizerApi.setEnquiryStatus(id, st);
             toast('Marked as ' + st.toLowerCase());
+            window.dispatchEvent(new Event('leads-changed'));
             reload();
         } catch (x) {
             toast(x.message || 'Could not update the enquiry.');
