@@ -4,16 +4,48 @@
    ============================================================ */
 
 /** Traveller dashboard. */
+
 function TravellerDashboard() {
     const s = useStore();
-    const me = authService.useAuth();
+    const auth = useAuth();
+    const me = auth.user;
+    if (!auth.ready || !me) {
+    return React.createElement("main", {
+        className: "max-w-shell mx-auto px-5 py-10"
+    }, "Loading your dashboard...");
+}
+    const [supabaseTrips, setSupabaseTrips] = React.useState(null);
+
+    React.useEffect(() => {
+        let active = true;
+
+        dataService.loadPublishedTrips()
+            .then(trips => {
+                if (active) setSupabaseTrips(trips);
+            })
+            .catch(error => {
+                console.error(
+                    "Could not load traveller trips; using demo data:",
+                    error
+                );
+            });
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
     const mine = enquiryService.forTraveller(me.id).filter(e => e.status !== 'CANCELLED');
     const upcoming = mine.map(e => ({ e, t: tripService.byId(e.tripId) })).filter(x => x.t);
     const saved = wishlistService.trips().slice(0, 4);
     const recent = s.recent.map(id => tripService.byId(id)).filter(Boolean).slice(0, 4);
     const prefs = me.prefs || {};
-    const recs = filterTrips(s.trips, { max: prefs.budget, sort: 'recommended' })
-        .filter(t => !prefs.types || !prefs.types.length || prefs.types.includes(t.category)).slice(0, 4);
+    const recs = filterTrips(supabaseTrips || s.trips, {
+        max: prefs.budget,
+        sort: 'recommended'
+    })
+        .filter(t => !prefs.types || !prefs.types.length || prefs.types.includes(t.category))
+        .slice(0, 4);
     return (React.createElement("main", { className: "max-w-shell mx-auto px-5 lg:px-8 py-10 md:py-14 pb-28 md:pb-14" },
         React.createElement("div", { className: "flex items-center gap-4" },
             React.createElement(Avatar, { kind: me.avatarKind || 'valley', seed: me.avatarSeed || 5, size: 56, name: me.name }),
