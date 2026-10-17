@@ -30,7 +30,9 @@ function OrganizerProfileForm({ me, org }) {
     const [err, setErr] = useState({});
     const [busy, setBusy] = useState(false);
     const [logoBusy, setLogoBusy] = useState(false);
+    const [bannerBusy, setBannerBusy] = useState(false);
     const fileRef = useRef(null);
+    const bannerRef = useRef(null);
     const dirty = JSON.stringify(f) !== JSON.stringify(saved);
 
     const validate = () => {
@@ -119,9 +121,62 @@ function OrganizerProfileForm({ me, org }) {
         }
     };
 
+    const pickBanner = async (file) => {
+        if (!file || bannerBusy)
+            return;
+        setBannerBusy(true);
+        let uploaded = null, linked = false;
+        try {
+            uploaded = await organizerApi.uploadBanner(file, me.id);
+            await organizerApi.setBanner(org.id, uploaded.url);
+            linked = true;
+            if (org.banner_url)
+                organizerApi.removeBanner(org.banner_url).catch(() => { });
+            await window.refreshAuth();
+            toast('Banner updated');
+        }
+        catch (x) {
+            console.error(x);
+            if (uploaded && !linked)
+                organizerApi.removeBanner(uploaded.path).catch(() => { });
+            toast(x.message || 'Could not upload the banner. Try again.', 'bad');
+        }
+        finally {
+            setBannerBusy(false);
+        }
+    };
+
+    const removeBanner = async () => {
+        if (bannerBusy || !org.banner_url)
+            return;
+        setBannerBusy(true);
+        try {
+            await organizerApi.setBanner(org.id, null);
+            organizerApi.removeBanner(org.banner_url).catch(() => { });
+            await window.refreshAuth();
+            toast('Banner removed');
+        }
+        catch (x) {
+            console.error(x);
+            toast(x.message || 'Could not remove the banner.', 'bad');
+        }
+        finally {
+            setBannerBusy(false);
+        }
+    };
+
     return (React.createElement(React.Fragment, null,
         React.createElement(SectionHead, { title: "Community profile", sub: "What travellers see on your public page and on every trip you list." }),
         React.createElement("form", { onSubmit: save, className: "max-w-2xl space-y-5" },
+            React.createElement("div", { className: "rounded-2xl border border-line overflow-hidden" },
+                React.createElement("div", { className: "relative h-28 sm:h-36 bg-shell" },
+                    React.createElement("img", { src: org.banner_url || sceneURL('mountains', 511), alt: "", className: "w-full h-full object-cover" }),
+                    !org.banner_url && React.createElement("div", { className: "absolute inset-0 bg-ink/35" })),
+                React.createElement("div", { className: "p-4 flex items-center gap-4 flex-wrap" },
+                    React.createElement("button", { type: "button", disabled: bannerBusy, onClick: () => bannerRef.current && bannerRef.current.click(), className: "text-[13.5px] font-semibold underline underline-offset-4 hover:text-earth disabled:opacity-50" }, bannerBusy ? 'Working...' : (org.banner_url ? 'Change banner' : 'Upload banner')),
+                    org.banner_url && React.createElement("button", { type: "button", disabled: bannerBusy, onClick: removeBanner, className: "text-[13.5px] text-muted hover:text-bad disabled:opacity-50" }, "Remove"),
+                    React.createElement("p", { className: "text-[12.5px] text-muted" }, "A wide photo works best. JPG, PNG or WebP; large images are resized for you.")),
+                React.createElement("input", { ref: bannerRef, type: "file", accept: "image/jpeg,image/png,image/webp", className: "hidden", onChange: e => { pickBanner(e.target.files[0]); e.target.value = ''; } })),
             React.createElement("div", { className: "rounded-2xl border border-line p-5 flex items-center gap-4" },
                 React.createElement(OrgLogo, { org: org, size: 64 }),
                 React.createElement("div", null,

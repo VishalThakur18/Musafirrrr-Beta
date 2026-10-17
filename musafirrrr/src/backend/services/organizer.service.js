@@ -90,6 +90,65 @@ function cleanInstagram(v) {
         .replace(/[/?].*$/, "");
 }
 
+/** Shrinks an image to at most maxW pixels wide and re-encodes it as JPEG. Falls back to the original. */
+async function shrinkImage(file, maxW, quality) {
+    try {
+        const bmp = await createImageBitmap(file);
+        const scale = Math.min(1, maxW / bmp.width);
+        const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(bmp, 0, 0, w, h);
+        if (bmp.close) bmp.close();
+        const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
+        if (!blob || (blob.size >= file.size && scale === 1)) return file;
+        return new File([blob], "banner.jpg", { type: "image/jpeg" });
+    } catch (e) {
+        return file;
+    }
+}
+
+/** Shrinks an image until it is at most maxBytes and maxW pixels wide.
+ *  Returns the original file untouched if it is already small enough. */
+async function shrinkToBytes(file, maxBytes, maxW) {
+    try {
+        const bmp = await createImageBitmap(file);
+        if (file.size <= maxBytes && bmp.width <= maxW) {
+            if (bmp.close) bmp.close();
+            return file;
+        }
+        let width = Math.min(bmp.width, maxW);
+        let blob = null;
+        for (let attempt = 0; attempt < 6; attempt++) {
+            const w = Math.round(width);
+            const h = Math.round(bmp.height * (w / bmp.width));
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fff";            // PNGs with transparency get a white background
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(bmp, 0, 0, w, h);
+            for (const q of [0.85, 0.75, 0.65, 0.55]) {
+                blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", q));
+                if (blob && blob.size <= maxBytes) break;
+            }
+            if (blob && blob.size <= maxBytes) break;
+            width = Math.round(width * 0.8);   // still too big: try smaller dimensions
+        }
+        if (bmp.close) bmp.close();
+        if (!blob) return file;
+        if (blob.size >= file.size && file.size <= maxBytes) return file;
+        return new File([blob], "photo.jpg", { type: "image/jpeg" });
+    } catch (e) {
+        return file;   // the caller still checks the size
+    }
+}
+
 const organizerApi = {
     /* ---------- reading ---------- */
 
@@ -158,12 +217,13 @@ const organizerApi = {
 
     async uploadTripImage(file, userId) {
         if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error("Use JPG, PNG or WebP photos.");
-        if (file.size > 5 * 1024 * 1024) throw new Error(file.name + " is larger than 5 MB.");
-        const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+        const img = await shrinkToBytes(file, 2 * 1024 * 1024, 2000);
+        if (img.size > 2 * 1024 * 1024) throw new Error(file.name + " couldn't be reduced under 2 MB. Try a smaller photo.");
+        const ext = img.type === "image/png" ? "png" : img.type === "image/webp" ? "webp" : "jpg";
         const path = userId + "/" + crypto.randomUUID() + "." + ext;
         const { error } = await window.sbClient.storage
             .from("trip-images")
-            .upload(path, file, { contentType: file.type, cacheControl: "31536000" });
+            .upload(path, img, { contentType: img.type, cacheControl: "31536000" });
         if (error) throw error;
         const { data } = window.sbClient.storage.from("trip-images").getPublicUrl(path);
         return { path, url: data.publicUrl };
@@ -260,14 +320,38 @@ const organizerApi = {
         if (!data || data.length === 0) throw new Error("Could not save your profile.");
     },
 
+    /** Shrinks a logo to at most maxSide pixels on its longest side. Keeps transparency (PNG/WebP become PNG). */
+    async shrinkLogo(file, maxSide) {
+        try {
+            const bmp = await createImageBitmap(file);
+            const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+            const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(bmp, 0, 0, w, h);          // no white fill, so transparent logos stay transparent
+            if (bmp.close) bmp.close();
+            const type = file.type === "image/jpeg" ? "image/jpeg" : "image/png";
+            const blob = await new Promise(res => canvas.toBlob(res, type, 0.9));
+            if (!blob || blob.size >= file.size) return file;
+            return new File([blob], "logo." + (type === "image/png" ? "png" : "jpg"), { type });
+        } catch (e) {
+            console.warn("logo shrink failed", e);
+            return file;
+        }
+    },
+
     async uploadLogo(file, userId) {
         if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error("Use a JPG, PNG or WebP image.");
-        if (file.size > 2 * 1024 * 1024) throw new Error("The logo must be under 2 MB.");
-        const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+        if (file.size > 10 * 1024 * 1024) throw new Error("Choose an image under 10 MB.");
+        const img = await shrinkLogo(file, 512);
+        if (img.size > 2 * 1024 * 1024) throw new Error("The logo must be under 2 MB.");
+        const ext = img.type === "image/png" ? "png" : img.type === "image/jpeg" ? "jpg" : "webp";
         const path = userId + "/" + crypto.randomUUID() + "." + ext;
         const { error } = await window.sbClient.storage
             .from("organizer-logos")
-            .upload(path, file, { contentType: file.type, cacheControl: "31536000" });
+            .upload(path, img, { contentType: img.type, cacheControl: "31536000" });
         if (error) throw error;
         const { data } = window.sbClient.storage.from("organizer-logos").getPublicUrl(path);
         return { path, url: data.publicUrl };
@@ -289,7 +373,40 @@ const organizerApi = {
         if (path) await window.sbClient.storage.from("organizer-logos").remove([path]);
     },
 
-        /* ---------- account settings ---------- */
+        /* ---------- banner ---------- */
+
+    async uploadBanner(file, userId) {
+        if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error("Use a JPG, PNG or WebP image.");
+        if (file.size > 10 * 1024 * 1024) throw new Error("Choose an image under 10 MB.");
+        const img = await shrinkImage(file, 1920, 0.85);
+        if (img.size > 5 * 1024 * 1024) throw new Error("That image is still over 5 MB after resizing. Try a smaller one.");
+        const ext = img.type === "image/png" ? "png" : img.type === "image/webp" ? "webp" : "jpg";
+        const path = userId + "/" + crypto.randomUUID() + "." + ext;
+        const { error } = await window.sbClient.storage
+            .from("organizer-banners")
+            .upload(path, img, { contentType: img.type, cacheControl: "31536000" });
+        if (error) throw error;
+        const { data } = window.sbClient.storage.from("organizer-banners").getPublicUrl(path);
+        return { path, url: data.publicUrl };
+    },
+
+    async setBanner(organizerId, url) {
+        const { data, error } = await window.sbClient
+            .from("organizers").update({ banner_url: url }).eq("id", organizerId).select("id");
+        if (error) throw new Error(error.message);
+        if (!data || data.length === 0) throw new Error("Could not update your banner.");
+    },
+
+    /** Deletes a banner file. Accepts a storage path or the public URL. */
+    async removeBanner(pathOrUrl) {
+        const marker = "/organizer-banners/";
+        const s = String(pathOrUrl || "");
+        const i = s.indexOf(marker);
+        const path = i === -1 ? s : decodeURIComponent(s.slice(i + marker.length).split("?")[0]);
+        if (path) await window.sbClient.storage.from("organizer-banners").remove([path]);
+    },
+
+    /* ---------- account settings ---------- */
 
     async updateAccount(userId, organizerId, { name, phone }) {
         const full = String(name || "").trim();
