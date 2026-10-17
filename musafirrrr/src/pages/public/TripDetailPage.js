@@ -3,29 +3,59 @@
    PAGE — TRIP DETAILS  (#/trip/:slug)
    ============================================================ */
 
+/** Height of the gallery frame: 260px on phones, growing to 440px on desktop. */
+const GALLERY_H = 'clamp(260px, 40vw, 440px)';
+
+/** A photo that always stays inside its frame. Photos close to the frame's shape fill it;
+ *  tall, square or very wide ones are shown whole over a blurred copy of themselves. */
+function FitPhoto({ im, alt }) {
+    const src = imgSrc(im);
+    const ref = useRef(null);
+    const [fit, setFit] = useState('cover');
+    const measure = el => {
+        const w = el.naturalWidth, h = el.naturalHeight;
+        if (!w || !h)
+            return;
+        const r = w / h;
+        setFit(r >= 1.3 && r <= 2.1 ? 'cover' : 'contain');
+    };
+    useEffect(() => {
+        setFit('cover');
+        const el = ref.current;
+        if (el && el.complete && el.naturalWidth)
+            measure(el);   // already loaded from cache
+    }, [src]);
+    const fill = { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' };
+    return (React.createElement("div", { style: { position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#EFEAE2' } },
+        fit === 'contain' && React.createElement("img", { src: src, alt: "", "aria-hidden": "true", style: { ...fill, objectFit: 'cover', filter: 'blur(24px)', opacity: 0.7, transform: 'scale(1.15)' } }),
+        React.createElement("img", { ref: ref, src: src, alt: alt, onLoad: e => measure(e.target), style: { ...fill, objectFit: fit } })));
+}
+
 /** Trip photo gallery with lightbox. */
 /* ---------- trip detail ---------- */
 function Gallery({ images, title }) {
     const [i, setI] = useState(0);
     const [lightbox, setLightbox] = useState(false);
-    const list = images && images.length ? images : [null];
+    const n = images ? images.length : 0;
+    const list = n ? images : [null];
+    const rest = list.map((im, idx) => ({ im, idx })).filter(o => o.idx !== i).slice(0, 3);
+    const tile = { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' };
     return (React.createElement(React.Fragment, null,
-        React.createElement("div", { className: "grid gap-2 md:grid-cols-[2fr_1fr] md:h-[440px]" },
-            React.createElement("button", { onClick: () => setLightbox(true), className: "relative block h-[260px] md:h-full rounded-2xl overflow-hidden group" },
-                React.createElement("img", { src: imgSrc(list[i]), alt: title, className: "w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.02]" }),
-                React.createElement("span", { className: "absolute bottom-3 right-3 rounded-full bg-white/92 px-3 py-1.5 text-[12.5px] font-semibold" },
-                    "View all ",
-                    list.length,
-                    " photos")),
-            React.createElement("div", { className: "hidden md:grid grid-rows-3 gap-2" }, list.slice(1, 4).map((im, k) => (React.createElement("button", { key: k, onClick: () => setI(k + 1), className: "relative rounded-2xl overflow-hidden group" },
-                React.createElement("img", { src: imgSrc(im), alt: "", className: "w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.04]" })))))),
-        React.createElement("div", { className: "md:hidden mt-2 u-scroll" },
-            React.createElement("div", { className: "flex gap-2" }, list.map((im, k) => (React.createElement("button", { key: k, onClick: () => setI(k), className: cls('w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2', i === k ? 'border-ink' : 'border-transparent') },
+        React.createElement("div", { className: cls('grid gap-2', n > 1 ? 'md:grid-cols-[2fr_1fr]' : ''), style: { height: GALLERY_H, gridTemplateRows: 'minmax(0, 1fr)' } },
+            React.createElement("button", { type: "button", onClick: () => setLightbox(true), className: "rounded-2xl", style: { position: 'relative', display: 'block', width: '100%', height: '100%', overflow: 'hidden', padding: 0 } },
+                React.createElement(FitPhoto, { im: list[i], alt: title }),
+                n > 0 && React.createElement("span", { style: { position: 'absolute', bottom: 12, right: 12, borderRadius: 999, padding: '6px 12px', fontSize: 12.5, fontWeight: 600, color: '#132025', background: 'rgba(255,255,255,.92)' } },
+                    n === 1 ? 'View photo' : 'View all ' + n + ' photos')),
+                        n > 1 && React.createElement("div", { className: "hidden md:grid gap-2", style: { height: '100%', minHeight: 0, gridTemplateRows: 'repeat(' + rest.length + ', minmax(0, 1fr))' } }, rest.map(o => (React.createElement("button", { key: o.idx, type: "button", onClick: () => setI(o.idx), className: "rounded-2xl", style: { position: 'relative', overflow: 'hidden', padding: 0, minHeight: 0 } },
+                    React.createElement("img", { src: imgSrc(o.im), alt: "", style: tile })))))),
+        n > 1 && React.createElement("div", { className: "md:hidden mt-2 u-scroll" },
+            React.createElement("div", { className: "flex gap-2" }, list.map((im, k) => (React.createElement("button", { key: k, type: "button", onClick: () => setI(k), className: cls('w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2', i === k ? 'border-ink' : 'border-transparent') },
                 React.createElement("img", { src: imgSrc(im), alt: "", className: "w-full h-full object-cover" })))))),
-        React.createElement(Modal, { open: lightbox, onClose: () => setLightbox(false), size: "lg", label: "Trip photos" },
+                React.createElement(Modal, { open: lightbox, onClose: () => setLightbox(false), size: "lg", label: "Trip photos" },
             React.createElement("div", { className: "p-3 sm:p-4" },
-                React.createElement("img", { src: imgSrc(list[i]), alt: title, className: "w-full rounded-2xl" }),
-                React.createElement("div", { className: "mt-3 flex gap-2 justify-center flex-wrap" }, list.map((im, k) => (React.createElement("button", { key: k, onClick: () => setI(k), className: cls('w-14 h-14 rounded-lg overflow-hidden border-2', i === k ? 'border-ink' : 'border-line') },
+                React.createElement("div", { style: { height: 'min(60vh, 520px)', borderRadius: 16, overflow: 'hidden' } },
+                    React.createElement(FitPhoto, { im: list[i], alt: title })),
+                React.createElement("div", { className: "mt-3 flex gap-2 justify-center flex-wrap" }, list.map((im, k) => (React.createElement("button", { key: k, type: "button", onClick: () => setI(k), className: cls('w-14 h-14 rounded-lg overflow-hidden border-2', i === k ? 'border-ink' : 'border-line') },
                     React.createElement("img", { src: imgSrc(im), alt: "", className: "w-full h-full object-cover" })))))))));
 }
 
@@ -254,7 +284,7 @@ function TripDetailPage({ slug }) {
                             React.createElement("p", { className: "mt-2 text-[15px] text-slatey leading-relaxed" }, trip.importantInfo || "Carry a government photo ID. The itinerary can shift with weather or road conditions. Payment is made directly to the organizer \u2014 Musafirrrr does not take money for trips."))),
                     org && (React.createElement("section", { className: "mt-10 rounded-2xl border border-line p-6" },
                         React.createElement("div", { className: "flex items-start gap-4" },
-                            React.createElement(Avatar, { kind: org.logoKind || 'mountains', seed: org.logoSeed || 11, size: 56, name: org.name }),
+                            React.createElement(OrgLogo, { org: org, size: 56 }),
                             React.createElement("div", { className: "min-w-0 flex-1" },
                                 React.createElement("div", { className: "flex items-center gap-2 flex-wrap" },
                                     React.createElement(Link, { to: '/o/' + org.slug, className: "font-bold text-[17px] tracking-tight hover:underline underline-offset-4" }, org.name),

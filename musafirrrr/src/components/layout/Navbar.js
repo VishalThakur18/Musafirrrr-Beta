@@ -44,7 +44,9 @@ function Navbar() {
                     me && React.createElement(React.Fragment, null,
                         React.createElement(Btn, { size: "sm", variant: "outline", className: "hidden md:inline-flex", onClick: () => go(me.role === 'ORGANIZER' ? '/organizer/dashboard' : '/traveller/dashboard') }, me.role === 'ORGANIZER' ? 'Dashboard' : 'My trips'),
                         React.createElement("button", { onClick: () => go(me.role === 'ORGANIZER' ? '/organizer/profile' : '/traveller/profile'), className: "hidden sm:block", "aria-label": "Your profile" },
-                            React.createElement(Avatar, { kind: me.avatarKind || 'mountains', seed: me.avatarSeed || 5, size: 38, name: me.name }))),
+                            (me.role === 'ORGANIZER' && me.organizer)
+                                ? React.createElement(OrgLogo, { org: me.organizer, size: 38 })
+                                : React.createElement(Avatar, { kind: me.avatarKind || 'mountains', seed: me.avatarSeed || 5, size: 38, name: me.name }))),
                     React.createElement("button", { onClick: () => setOpen(o => !o), "aria-label": "Menu", "aria-expanded": open, className: "lg:hidden w-10 h-10 rounded-full border border-line flex items-center justify-center" },
                         React.createElement(Icon, { name: open ? 'x' : 'menu', size: 18 }))))),
         open && (React.createElement("div", { className: "lg:hidden border-t border-line bg-white fade-in" },

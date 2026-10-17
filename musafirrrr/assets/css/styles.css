@@ -29,3 +29,11 @@
   :focus-visible{ outline:2px solid #33464A; outline-offset:2px; border-radius:4px; }
   @media (prefers-reduced-motion: reduce){ *{ animation-duration:.01ms !important; transition-duration:.01ms !important; } html{scroll-behavior:auto} }
   .no-scroll{ overflow:hidden; }
+  /* Instagram button */
+  .btn-ig{
+    background:linear-gradient(45deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%) !important;
+    color:#fff !important;
+    border-color:transparent !important;
+  }
+  .btn-ig:hover{ filter:brightness(1.08); }
+  .btn-ig:active{ filter:brightness(.95); }

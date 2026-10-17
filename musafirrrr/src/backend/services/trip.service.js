@@ -60,6 +60,8 @@ function dbToPublicOrganizer(o) {
         city: o.based_in || '', bio: o.bio || '', verified: !!o.verified,
         since: o.years_active > 0 ? new Date().getFullYear() - o.years_active : null,
         whatsapp: publicWa(o.whatsapp_number), instagram: o.instagram_handle || '',
+        logo_url: o.logo_url || null, 
+        banner_url: o.banner_url || null,
         logoKind: 'mountains', logoSeed: 11
     };
 }
@@ -69,7 +71,7 @@ const tripApi = {
     async bySlug(slug) {
         const { data, error } = await window.sbClient
             .from('trips')
-            .select('*, organizers(id, slug, name, based_in, bio, whatsapp_number, instagram_handle, verified, years_active), trip_images(image_url, position), itinerary_days(day_number, title, description), trip_inclusions(item, kind), reviews(rating)')
+            .select('*, organizers(id, slug, name, based_in, bio, logo_url, whatsapp_number, instagram_handle, verified, years_active), trip_images(image_url, position), itinerary_days(day_number, title, description), trip_inclusions(item, kind), reviews(rating)')
             .eq('slug', slug)
             .maybeSingle();
         if (error)
@@ -118,7 +120,7 @@ const tripApi = {
     async organizerPage(slug) {
         const { data, error } = await window.sbClient
             .from('organizers')
-            .select('id, slug, name, based_in, bio, logo_url, whatsapp_number, instagram_handle, verified, years_active, created_at')
+            .select('id, slug, name, based_in, bio, logo_url, banner_url, whatsapp_number, instagram_handle, verified, years_active, created_at')
             .eq('slug', slug)
             .maybeSingle();
         if (error)
@@ -135,7 +137,7 @@ const tripApi = {
             throw e2;
         const base = dbToPublicOrganizer(data);
         const joined = data.created_at ? new Date(data.created_at).getFullYear() : null;
-        const org = { ...base, logo_url: data.logo_url, since: base.since || joined };
+        const org = { ...base, since: base.since || joined };
         const trips = (rows || []).map(r => ({ ...dbToTrip(r), fromDb: true, organizer: org }));
         return { org, trips };
     },

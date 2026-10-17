@@ -50,7 +50,7 @@ function TripCard({ trip, compact }) {
         React.createElement("div", { className: "p-4 sm:p-[18px]" },
             React.createElement("h3", { className: "text-[17px] font-bold leading-snug tracking-[-0.01em] text-ink" }, trip.title),
             React.createElement("div", { className: "mt-2 flex items-center gap-2 text-[13px] text-slatey" },
-                org && React.createElement(Avatar, { kind: org.logoKind || 'mountains', seed: org.logoSeed || 11, size: 20, name: org.name }),
+                org && React.createElement(OrgLogo, { org: org, size: 20 }),
                 React.createElement("span", { className: "truncate" }, org ? org.name : 'Independent organizer'),
                 org && org.verified && React.createElement(Icon, { name: "shield", size: 13, className: "text-ok shrink-0" })),
             React.createElement("div", { className: "mt-3 flex items-center gap-3 text-[13px] text-muted" },
