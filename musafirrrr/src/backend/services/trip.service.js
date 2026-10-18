@@ -85,20 +85,37 @@ function publicTripFromRow(data) {
 }
 
 const tripApi = {
-    /** One visible trip with organizer, photos, itinerary, inclusions and review stats. */
-    async bySlug(slug) {
-        const trips = await dataService.loadPublishedTrips();
-        const published = trips.find(t => t.slug === slug);
-        if (published) return published;
-        return dataService.cachedRead('detail:' + slug, async () => {
-            const { data, error } = await window.sbClient.from('trips')
-                .select('*, organizers(id, slug, name, based_in, bio, logo_url, whatsapp_number, instagram_handle, verified, years_active), trip_images(image_url, position), itinerary_days(day_number, title, description), trip_inclusions(item, kind), reviews(rating)')
-                .eq('slug', slug).maybeSingle();
-            if (error) throw error;
-            return data ? publicTripFromRow(data) : null;
-        });
-    },
+/** One visible trip with organizer, photos, itinerary, inclusions and review stats. */
+async bySlug(slug) {
+    return dataService.cachedRead('detail:' + slug, async () => {
+        const { data, error } = await window.sbClient
+            .from('trips')
+            .select(`
+                *,
+                organizers(
+                    id, slug, name, based_in, bio,
+                    logo_url, whatsapp_number,
+                    instagram_handle, verified, years_active
+                ),
+                trip_images(image_url, position),
+                itinerary_days(day_number, title, description),
+                trip_inclusions(item, kind),
+                reviews(rating)
+            `)
+            .eq('slug', slug)
+            .maybeSingle();
 
+        if (error) {
+            throw error;
+        }
+
+        if (!data) {
+            return null;
+        }
+
+        return publicTripFromRow(data);
+    });
+},
     /** Up to three other published trips by the same organizer. */
     async moreFrom(organizerId, excludeId) {
         const trips = await dataService.loadPublishedTrips();
