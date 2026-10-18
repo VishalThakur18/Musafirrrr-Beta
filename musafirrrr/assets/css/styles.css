@@ -135,3 +135,11 @@ html { scrollbar-gutter: stable; }
 .enquiry-success { overflow-y: auto; padding-top: 64px; }
 @media (max-width: 380px) { .enquiry-header { padding-left: 16px; } .enquiry-body, .enquiry-footer { padding-left: 16px; padding-right: 16px; } }
 @media (prefers-reduced-motion: reduce) { .trip-gallery__track { scroll-behavior: auto; } .enquiry-panel { animation: none; } }
+  /* Instagram button */
+  .btn-ig{
+    background:linear-gradient(45deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%) !important;
+    color:#fff !important;
+    border-color:transparent !important;
+  }
+  .btn-ig:hover{ filter:brightness(1.08); }
+  .btn-ig:active{ filter:brightness(.95); }

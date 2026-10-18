@@ -3,6 +3,34 @@
    PAGE — TRIP DETAILS  (#/trip/:slug)
    ============================================================ */
 
+/** Height of the gallery frame: 260px on phones, growing to 440px on desktop. */
+const GALLERY_H = 'clamp(260px, 40vw, 440px)';
+
+/** A photo that always stays inside its frame. Photos close to the frame's shape fill it;
+ *  tall, square or very wide ones are shown whole over a blurred copy of themselves. */
+function FitPhoto({ im, alt }) {
+    const src = imgSrc(im);
+    const ref = useRef(null);
+    const [fit, setFit] = useState('cover');
+    const measure = el => {
+        const w = el.naturalWidth, h = el.naturalHeight;
+        if (!w || !h)
+            return;
+        const r = w / h;
+        setFit(r >= 1.3 && r <= 2.1 ? 'cover' : 'contain');
+    };
+    useEffect(() => {
+        setFit('cover');
+        const el = ref.current;
+        if (el && el.complete && el.naturalWidth)
+            measure(el);   // already loaded from cache
+    }, [src]);
+    const fill = { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' };
+    return (React.createElement("div", { style: { position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#EFEAE2' } },
+        fit === 'contain' && React.createElement("img", { src: src, alt: "", "aria-hidden": "true", style: { ...fill, objectFit: 'cover', filter: 'blur(24px)', opacity: 0.7, transform: 'scale(1.15)' } }),
+        React.createElement("img", { ref: ref, src: src, alt: alt, onLoad: e => measure(e.target), style: { ...fill, objectFit: fit } })));
+}
+
 /** Trip photo gallery with lightbox. */
 /* ---------- trip detail ---------- */
 function Gallery({ images, title }) {
@@ -309,7 +337,7 @@ function TripDetailPage({ slug }) {
                             React.createElement("p", { className: "mt-2 text-[15px] text-slatey leading-relaxed" }, trip.importantInfo || "Carry a government photo ID. The itinerary can shift with weather or road conditions. Payment is made directly to the organizer \u2014 Musafirrrr does not take money for trips."))),
                     org && (React.createElement("section", { className: "mt-10 rounded-2xl border border-line p-6" },
                         React.createElement("div", { className: "flex items-start gap-4" },
-                            React.createElement(Avatar, { kind: org.logoKind || 'mountains', seed: org.logoSeed || 11, size: 56, name: org.name }),
+                            React.createElement(OrgLogo, { org: org, size: 56 }),
                             React.createElement("div", { className: "min-w-0 flex-1" },
                                 React.createElement("div", { className: "flex items-center gap-2 flex-wrap" },
                                     React.createElement(Link, { to: '/o/' + org.slug, className: "font-bold text-[17px] tracking-tight hover:underline underline-offset-4" }, org.name),

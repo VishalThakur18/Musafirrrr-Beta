@@ -14,5 +14,5 @@ function WhatsAppButton({ trip, org, size = 'md', className, label = 'Chat on Wh
 function InstagramButton({ org, size = 'md', className, label = 'Message on Instagram' }) {
     if (!org || !org.instagram)
         return null;
-    return React.createElement(Btn, { as: "a", href: igLink(org.instagram), target: "_blank", rel: "noopener noreferrer", variant: "ig", size: size, icon: "ig", className: className }, label);
+    return React.createElement(Btn, { as: "a", href: igLink(org.instagram), target: "_blank", rel: "noopener noreferrer", variant: "ig", size: size, icon: "ig", className: cls('btn-ig', className) }, label);
 }

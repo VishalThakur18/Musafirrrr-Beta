@@ -31,30 +31,226 @@ function SpotsMeter({ trip, compact }) {
 }
 
 /** Reusable image-led trip card for all listings; color sampling stays separate. */
+
+/** Reusable image-led trip card with shared trip information. */
 function TripCard({ trip }) {
     const src = tripCoverSrc(trip);
     const coverLayout = tripCoverLayout();
-    const [tone, setTone] = useState({ src: null, value: DEFAULT_PHOTO_TONE });
+    const [tone, setTone] = useState({
+        src: null,
+        value: DEFAULT_PHOTO_TONE
+    });
+
     const org = trip.organizer || organizerService.byId(trip.organizerId);
-    return React.createElement("article", { className: "trip-card", style: { "--photo-tone": tone.src === src ? tone.value : DEFAULT_PHOTO_TONE } },
-        React.createElement(Link, { to: '/trip/' + trip.slug, className: "trip-card__link" },
-            React.createElement("div", { className: "trip-card__photo", style: coverLayout.style },
-                React.createElement("img", { src, crossOrigin: /^https?:/.test(src) ? 'anonymous' : undefined, onError: e => { const img = e.currentTarget; if (img.crossOrigin) { img.removeAttribute('crossorigin'); img.src = src; } }, onLoad: e => setTone({ src, value: photoTone(e.currentTarget) }), alt: trip.destination, loading: "lazy", decoding: "async", width: coverLayout.width, height: coverLayout.height }),
-                React.createElement("span", { className: "trip-card__category" }, trip.category)),
-            React.createElement("div", { className: "trip-card__note" },
-                React.createElement("div", { className: "trip-card__eyebrow" },
-                    React.createElement("span", null, trip.destination),
-                    trip.rating > 0 && React.createElement("span", { className: "trip-card__rating", "aria-label": 'Rated ' + trip.rating + ' out of 5' }, "★ ", trip.rating)),
-                React.createElement("h3", { title: trip.title }, trip.title),
-                React.createElement("p", { className: "trip-card__organizer" }, org ? org.name : 'Independent organizer'),
-                React.createElement("div", { className: "trip-card__dates" }, dateRange(trip.startDate, trip.endDate), " · ", dur(trip)),
-                React.createElement("div", { className: "trip-card__footer" },
-                    React.createElement("div", null, React.createElement("strong", null, INR(trip.price)), React.createElement("span", { className: "trip-card__per" }, "per person")),
-                    React.createElement("span", { className: "trip-card__duration" }, dur(trip))),
-                React.createElement("div", { className: "trip-card__spots" }, React.createElement(SpotsMeter, { trip, compact: true })),
-                React.createElement("span", { className: "trip-card__cta" }, "View trip", React.createElement("span", { "aria-hidden": true }, " \u2197")))),
-        React.createElement(WishlistButton, { tripId: trip.id, onPhoto: true, className: "trip-card__save" }));
+    const soon = daysUntil(trip.startDate);
+
+    return React.createElement(
+        "article",
+        {
+            className: "trip-card",
+            style: {
+                "--photo-tone":
+                    tone.src === src ? tone.value : DEFAULT_PHOTO_TONE
+            }
+        },
+
+        React.createElement(
+            Link,
+            {
+                to: '/trip/' + trip.slug,
+                className: "trip-card__link"
+            },
+
+            React.createElement(
+                "div",
+                {
+                    className: "trip-card__photo",
+                    style: coverLayout.style
+                },
+
+                React.createElement("img", {
+                    src,
+                    crossOrigin: /^https?:/.test(src)
+                        ? 'anonymous'
+                        : undefined,
+                    onError: e => {
+                        const img = e.currentTarget;
+                        if (img.crossOrigin) {
+                            img.removeAttribute('crossorigin');
+                            img.src = src;
+                        }
+                    },
+                    onLoad: e => setTone({
+                        src,
+                        value: photoTone(e.currentTarget)
+                    }),
+                    alt: trip.destination,
+                    loading: "lazy",
+                    decoding: "async",
+                    width: coverLayout.width,
+                    height: coverLayout.height
+                }),
+
+                React.createElement(
+                    "span",
+                    { className: "trip-card__category" },
+                    trip.category
+                ),
+
+                trip.status === 'SOLD_OUT' &&
+                    React.createElement(
+                        Tag_,
+                        { tone: "bad" },
+                        "Sold out"
+                    ),
+
+                trip.status === 'DRAFT' &&
+                    React.createElement(
+                        Tag_,
+                        { tone: "warn" },
+                        "Draft"
+                    ),
+
+                soon > 0 &&
+                soon <= 21 &&
+                trip.status === 'PUBLISHED' &&
+                    React.createElement(
+                        Tag_,
+                        { tone: "beige" },
+                        "Leaves in ",
+                        soon,
+                        "d"
+                    )
+            ),
+
+            React.createElement(
+                "div",
+                { className: "trip-card__note" },
+
+                React.createElement(
+                    "div",
+                    { className: "trip-card__eyebrow" },
+
+                    React.createElement(
+                        "span",
+                        null,
+                        trip.destination
+                    ),
+
+                    trip.rating > 0 &&
+                        React.createElement(
+                            "span",
+                            {
+                                className: "trip-card__rating",
+                                "aria-label":
+                                    'Rated ' + trip.rating + ' out of 5'
+                            },
+                            "★ ",
+                            trip.rating
+                        )
+                ),
+
+                React.createElement(
+                    "h3",
+                    { title: trip.title },
+                    trip.title
+                ),
+
+                React.createElement(
+                    "div",
+                    { className: "trip-card__organizer flex items-center gap-2" },
+
+                    org && React.createElement(
+                        OrgLogo,
+                        { org, size: 20 }
+                    ),
+
+                    React.createElement(
+                        "span",
+                        null,
+                        org ? org.name : 'Independent organizer'
+                    ),
+
+                    org && org.verified &&
+                        React.createElement(
+                            Icon,
+                            {
+                                name: "shield",
+                                size: 13,
+                                className: "text-ok shrink-0"
+                            }
+                        )
+                ),
+
+                React.createElement(
+                    "div",
+                    { className: "trip-card__dates" },
+                    dateRange(trip.startDate, trip.endDate),
+                    " · ",
+                    dur(trip)
+                ),
+
+                React.createElement(
+                    "div",
+                    { className: "trip-card__footer" },
+
+                    React.createElement(
+                        "div",
+                        null,
+
+                        React.createElement(
+                            "strong",
+                            null,
+                            INR(trip.price)
+                        ),
+
+                        React.createElement(
+                            "span",
+                            { className: "trip-card__per" },
+                            "per person"
+                        )
+                    ),
+
+                    React.createElement(
+                        "span",
+                        { className: "trip-card__duration" },
+                        dur(trip)
+                    )
+                ),
+
+                React.createElement(
+                    "div",
+                    { className: "trip-card__spots" },
+                    React.createElement(
+                        SpotsMeter,
+                        { trip, compact: true }
+                    )
+                ),
+
+                React.createElement(
+                    "span",
+                    { className: "trip-card__cta" },
+                    "View trip",
+                    React.createElement(
+                        "span",
+                        { "aria-hidden": true },
+                        " ↗"
+                    )
+                )
+            )
+        ),
+
+        React.createElement(
+            WishlistButton,
+            {
+                tripId: trip.id,
+                onPhoto: true,
+                className: "trip-card__save"
+            }
+        )
+    );
 }
+
 
 /** Responsive grid of trip cards (with loading/empty states). */
 function TripGrid({ trips, loading, cols = '3', empty }) {

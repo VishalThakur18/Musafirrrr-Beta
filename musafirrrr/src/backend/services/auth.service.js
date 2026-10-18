@@ -55,7 +55,7 @@ if (!session) return null;
     const { data: organizer, error } = await sb
       .from("organizers")
       .select(
-        "id, slug, name, contact_person, based_in, bio, logo_url, phone, whatsapp_number, instagram_handle, verified, years_active"
+        "id, slug, name, contact_person, based_in, bio, logo_url, banner_url, phone, whatsapp_number, instagram_handle, verified, years_active"
       )
       .eq("user_id", user.id)
       .maybeSingle();
