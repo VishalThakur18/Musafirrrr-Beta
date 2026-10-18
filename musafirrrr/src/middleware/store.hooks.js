@@ -19,12 +19,14 @@ function useStore() {
  * Pass a user (or null) to set it directly, or nothing to fetch it.
  */
 async function refreshAuth(user) {
+    const previousUserId = authState.user && authState.user.id;
     try {
         authState.user = user !== undefined ? user : await authService.current();
     } catch (err) {
         console.error("Auth refresh failed:", err);
         authState.user = null;
     }
+    if (previousUserId !== (authState.user && authState.user.id)) dataService.invalidate(false);
     authState.ready = true;
     authState.subs.forEach(f => f());
 }

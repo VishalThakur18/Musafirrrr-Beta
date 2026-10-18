@@ -29,7 +29,9 @@ const saved = lsGet(LS_KEY, null) || {};
 /** Global in-memory database + subscribe/notify + persistence. */
 const store = {
     state: {
-        trips: saved.trips || TRIPS,
+        trips: [],
+        tripsLoading: true,
+        tripsError: null,
         organizers: saved.organizers || ORGANIZERS,
         users: { ...saved.users },
         enquiries: saved.enquiries || ENQUIRIES,

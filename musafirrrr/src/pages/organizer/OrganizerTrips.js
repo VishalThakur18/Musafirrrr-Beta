@@ -98,7 +98,7 @@ function OrganizerTrips() {
         list.length === 0
             ? React.createElement(EmptyState, { icon: "compass", title: "No trips here", body: "Create a trip and it will show up in this list the moment you save it.", action: React.createElement(Btn, { onClick: () => go('/organizer/create') }, "Create trip") })
             : React.createElement("div", { className: "space-y-3" }, list.map(t => (React.createElement("div", { key: t.id, className: "rounded-2xl border border-line p-4 flex flex-col sm:flex-row gap-4" },
-                React.createElement("img", { src: imgSrc(coverOf(t)), alt: "", className: "w-full sm:w-32 h-32 sm:h-24 rounded-xl object-cover" }),
+                React.createElement("img", { src: tripCoverSrc(t), alt: "", className: "w-full sm:w-32 h-32 sm:h-24 rounded-xl object-cover" }),
                 React.createElement("div", { className: "flex-1 min-w-0" },
                     React.createElement("div", { className: "flex items-start gap-3 justify-between" },
                         React.createElement("div", { className: "min-w-0" },

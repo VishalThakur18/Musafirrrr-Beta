@@ -1,79 +1,70 @@
-
 "use strict";
 
-/* BACKEND SERVICE — TRAVELLER DATA */
-
+/** One public snapshot shared by listings, details and traveller pages.
+ * Memory-only: never persists authenticated data or stale demo trips to disk.
+ * TTL refreshes on navigation/focus; simultaneous consumers share one request.
+ */
 const dataService = {
-    async loadPublishedTrips() {
-        const { data, error } = await window.sbClient
-            .from("trips")
-            .select(`
-                *,
-                trip_images(image_url, position),
-                itinerary_days(day_number, title, description),
-                trip_inclusions(item, kind)
-            `)
-            .in("status", ["published", "sold_out"])
-            .order("start_date", { ascending: true });
-
-        if (error) {
-            console.error("Could not load trips from Supabase:", error);
+    ttl: 60000,
+    expiresAt: 0,
+    pending: null,
+    generation: 0,
+    snapshot: null,
+    reads: new Map(),
+    cachedRead(key, loader) {
+        const hit = this.reads.get(key);
+        if (hit && Date.now() < hit.expires) return hit.promise;
+        const entry = { expires: Date.now() + this.ttl };
+        entry.promise = Promise.resolve().then(loader).catch(error => {
+            if (this.reads.get(key) === entry) this.reads.delete(key);
+            throw error;
+        });
+        if (this.reads.size >= 100) this.reads.delete(this.reads.keys().next().value);
+        this.reads.set(key, entry);
+        return entry.promise;
+    },
+    invalidate(broadcast = true) {
+        if (broadcast) { try { localStorage.setItem('musafirrrr.publicTrips.changed', String(Date.now())); } catch (_) {} }
+        this.generation++;
+        this.reads.clear();
+        this.expiresAt = 0;
+        this.snapshot = null;
+        store.quiet(s => { s.trips = []; s.tripsLoading = true; });
+        this.loadIntoStore().catch(() => {});
+    },
+    loadPublishedTrips() {
+        if (this.pending) return this.pending;
+        if (this.snapshot && Date.now() < this.expiresAt) return Promise.resolve(this.snapshot);
+        this.pending = this.fetchSnapshot().finally(() => { this.pending = null; });
+        return this.pending;
+    },
+    async fetchSnapshot() {
+        store.quiet(s => { s.tripsLoading = !this.snapshot; s.tripsError = null; });
+        try {
+            let trips;
+            let version;
+            do {
+                version = this.generation;
+                const { data, error } = await window.sbClient.from('trips')
+                    .select('*, organizers(id, slug, name, based_in, bio, whatsapp_number, instagram_handle, verified, years_active), trip_images(image_url, position), itinerary_days(day_number, title, description), trip_inclusions(item, kind), reviews(rating)')
+                    .in('status', ['published', 'sold_out'])
+                    .order('start_date', { ascending: true });
+                if (error) throw error;
+                trips = (data || []).map(publicTripFromRow);
+            } while (version !== this.generation);
+            this.snapshot = trips;
+            this.expiresAt = Date.now() + this.ttl;
+            store.quiet(s => { s.trips = trips; s.tripsLoading = false; s.tripsError = null; });
+            return trips;
+        } catch (error) {
+            store.quiet(s => { s.tripsLoading = false; s.tripsError = error; });
             throw error;
         }
-
-        return (data || []).map(row => ({
-            ...row,
-            organizerId: row.organizer_id,
-            startingFrom: row.starting_location,
-            startingLocation: row.starting_location,
-            groupType: row.group_type,
-            startDate: row.start_date,
-            endDate: row.end_date,
-            days: row.duration_days,
-            nights: row.duration_nights,
-            totalSpots: row.total_spots,
-            availableSpots: row.spots_left,
-            meetingPoint: row.meeting_point,
-            advance: row.advance_amount,
-            advanceAmount: row.advance_amount,
-            status: String(row.status || "").toUpperCase(),
-            currency: row.currency || "INR",
-            rating: row.rating ?? 4.6,
-            reviews: row.reviews ?? 0,
-            coverImage: row.cover_image_url
-                ? { k: "file", url: row.cover_image_url }
-                : null,
-            images: (row.trip_images || [])
-                .sort((a, b) => a.position - b.position)
-                .map(image => image.image_url),
-            itinerary: (row.itinerary_days || [])
-                .sort((a, b) => a.day_number - b.day_number)
-                .map(day => ({
-                    day: day.day_number,
-                    title: day.title || "",
-                    detail: day.description || ""
-                })),
-            included: (row.trip_inclusions || [])
-                .filter(item => item.kind === "included")
-                .map(item => item.item),
-            excluded: (row.trip_inclusions || [])
-                .filter(item => item.kind === "excluded")
-                .map(item => item.item),
-            createdAt: row.created_at
-                ? row.created_at.slice(0, 10)
-                : null
-        }));
     },
-
-    async loadIntoStore() {
-        const trips = await this.loadPublishedTrips();
-
-        store.set(s => {
-            s.trips = [...trips];
-        });
-
-        return trips;
-    }
+    loadIntoStore() { return this.loadPublishedTrips(); }
 };
-
 window.dataService = dataService;
+
+window.addEventListener("storage", event => {
+    if (event.key === "musafirrrr.publicTrips.changed") dataService.invalidate(false);
+});

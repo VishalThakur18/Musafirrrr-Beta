@@ -1,6 +1,6 @@
-"use strict";
+﻿"use strict";
 /* ============================================================
-   PAGE — EXPLORE  (#/explore)
+   PAGE â€” EXPLORE  (#/explore)
    Includes the filter logic and filter panel.
    ============================================================ */
 
@@ -110,7 +110,7 @@ function ExplorePage({ params }) {
                     " ",
                     orgCount === 1 ? 'organizer' : 'organizers')),
             React.createElement("div", { className: "flex items-center gap-2.5" },
-                React.createElement("button", { onClick: () => setSheet(true), className: "lg:hidden inline-flex items-center gap-2 h-11 px-4 rounded-full border border-line bg-white text-[14px] font-semibold" },
+                React.createElement("button", { onClick: () => setSheet(true), "aria-expanded": sheet, "aria-controls": "trip-filters", className: "inline-flex items-center gap-2 h-11 px-4 rounded-full border border-line bg-white text-[14px] font-semibold" },
                     React.createElement(Icon, { name: "filter", size: 16 }),
                     " Filters ",
                     activeCount > 0 && React.createElement("span", { className: "w-5 h-5 rounded-full bg-ink text-white text-[11px] flex items-center justify-center" }, activeCount)),
@@ -120,19 +120,20 @@ function ExplorePage({ params }) {
                 React.createElement("div", { className: "sticky", style: { top: 'calc(96px + env(safe-area-inset-top,0px))' } },
                     React.createElement(FilterPanel, { f: f, set: set, onClear: clear, count: results.length }))),
             React.createElement("div", null,
-                React.createElement(TripGrid, { trips: results, loading: loading, empty: React.createElement(EmptyState, { title: "Nothing matches yet", body: "No trips fit those filters. Widen the dates, raise the budget, or clear the filters to see everything.", action: React.createElement(Btn, { onClick: clear }, "Clear filters") }) }))),
-        sheet && (React.createElement("div", { className: "lg:hidden fixed inset-0 z-[95]" },
+                React.createElement(TripGrid, { trips: results, loading: loading || s.tripsLoading, empty: React.createElement(EmptyState, { title: "Nothing matches yet", body: "No trips fit those filters. Widen the dates, raise the budget, or clear the filters to see everything.", action: React.createElement(Btn, { onClick: clear }, "Clear filters") }) }))),
+        sheet && ReactDOM.createPortal(React.createElement("div", { id: "trip-filters", role: "dialog", "aria-modal": "true", "aria-label": "Trip filters", className: "filter-dialog" },
             React.createElement("div", { className: "absolute inset-0 bg-ink/45 fade-in", onClick: () => setSheet(false) }),
-            React.createElement("div", { className: "absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[88vh] overflow-y-auto sheet-up", style: { paddingBottom: 'env(safe-area-inset-bottom,0px)' } },
-                React.createElement("div", { className: "sticky top-0 bg-white px-5 pt-5 pb-3 flex items-center justify-between border-b border-line" },
+            React.createElement("div", { className: "filter-dialog__panel sheet-up" },
+                React.createElement("div", { className: "filter-dialog__header bg-white px-5 pt-5 pb-3 flex items-center justify-between border-b border-line" },
                     React.createElement("h2", { className: "text-xl font-bold tracking-tight" }, "Filters"),
-                    React.createElement("button", { onClick: () => setSheet(false), className: "w-9 h-9 rounded-full border border-line flex items-center justify-center" },
+                    React.createElement("button", { onClick: () => setSheet(false), "aria-label": "Close filters", className: "w-9 h-9 rounded-full border border-line flex items-center justify-center" },
                         React.createElement(Icon, { name: "x", size: 16 }))),
-                React.createElement("div", { className: "p-5" },
+                React.createElement("div", { className: "filter-dialog__body p-5" },
                     React.createElement(FilterPanel, { f: f, set: set, onClear: clear, count: results.length })),
-                React.createElement("div", { className: "sticky bottom-0 bg-white border-t border-line p-4" },
+                React.createElement("div", { className: "filter-dialog__footer bg-white border-t border-line p-4" },
                     React.createElement(Btn, { className: "w-full", size: "lg", onClick: () => setSheet(false) },
                         "Show ",
                         results.length,
-                        " trips")))))));
+                        " trips")))), document.body)));
 }
+

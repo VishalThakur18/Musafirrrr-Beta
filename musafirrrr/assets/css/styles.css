@@ -10,6 +10,8 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
     color-scheme: light;
     --bg:beige;
+    --font-heading:"Caveat",cursive;
+    --font-body: "Merriweather", serif;
   }
   :root:not([data-theme="light"]){ color-scheme: light; }
   html{ scroll-padding-top: env(safe-area-inset-top, 0px); scroll-behavior:smooth; }
@@ -29,3 +31,107 @@
   :focus-visible{ outline:2px solid #33464A; outline-offset:2px; border-radius:4px; }
   @media (prefers-reduced-motion: reduce){ *{ animation-duration:.01ms !important; transition-duration:.01ms !important; } html{scroll-behavior:auto} }
   .no-scroll{ overflow:hidden; }
+
+/* Reusable image-led trip cards. All text sits on an opaque, contrast-safe tone. */
+.trip-card-grid { row-gap: 28px; grid-auto-rows: 1fr; }
+.trip-card { --photo-tone: 30, 48, 52; position: relative; min-width: 0; overflow: hidden; border-radius: 30px; background: rgb(var(--photo-tone)); color: #fff; box-shadow: 0 14px 28px -18px #13202570; }
+.trip-card__link { display: flex; flex-direction: column; height: 100%; color: #fff; text-decoration: none; }
+.trip-card__photo { position: relative; flex: none; width: 100%; overflow: hidden; }
+.trip-card__photo img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.trip-card__photo::after { content: ''; position: absolute; inset: 40% 0 0; background: linear-gradient(transparent, rgba(var(--photo-tone), .65) 55%, rgb(var(--photo-tone))); pointer-events: none; }
+.trip-card__category { position: absolute; z-index: 1; top: 18px; left: 16px; border-radius: 20px; padding: 6px 10px; background: #132025d9; color: white; font-size: 11px; font-weight: 600; }
+.trip-card__save { position: absolute; top: 16px; right: 16px; }
+.trip-card__note { flex: 1; display: flex; flex-direction: column; padding: 0 19px 18px; background: rgb(var(--photo-tone)); }
+.trip-card__eyebrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; letter-spacing: .04em; color: #e2e7e7; }
+.trip-card__rating { white-space: nowrap; }
+.trip-card__note h3 { margin: 10px 0 7px; font-family: inherit; font-weight: 700; font-size: 20px; line-height: 1.25; letter-spacing: -.03em; color: #fff; }
+.trip-card__organizer { margin: 0; font-size: 12px; color: #e2e7e7; line-height: 1.5; }
+.trip-card__dates { margin: 14px 0; font-size: 12px; color: #e2e7e7; line-height: 1.6; }
+.trip-card__footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; }
+.trip-card__footer strong { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
+.trip-card__per { display: block; font-size: 10px; color: #e2e7e7; }
+.trip-card__duration { padding: 6px 10px; border-radius: 20px; background: #ffffff18; font-size: 11px; white-space: nowrap; }
+.trip-card__spots { margin: 10px 0 17px; }
+.trip-card__spots span { color: #e2e7e7; font-size: 12px; }
+.trip-card__cta { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; background: #fff; color: #132025; border-radius: 25px; font-size: 13px; font-weight: 700; }
+.trip-card__link:focus-visible { outline: 3px solid #fff; outline-offset: -5px; border-radius: 30px; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .trip-card { transition: transform .2s ease, box-shadow .2s ease; }
+  .trip-card:hover { transform: translateY(-3px); box-shadow: 0 18px 32px -18px #13202580; }
+}
+
+.trip-card__save-button { color: #fff; background: #132025cc; border: 1px solid #ffffff70; }
+.trip-card__save-button:hover { color: #fff; background: #132025; }
+.trip-card__save-button[aria-pressed="true"] { color: #fff; background: #132025; }
+.trip-card__save-button:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+
+.trip-card__note h3 { min-height: 2.5em; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.trip-card__organizer { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.trip-card__eyebrow > span:first-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* Filters: bottom sheet on phones, centered dialog on larger screens. */
+.filter-dialog { position: fixed; inset: 0; z-index: 95; display: flex; align-items: flex-end; justify-content: center; }
+.filter-dialog__panel { position: relative; display: flex; flex-direction: column; width: 100%; max-height: 88vh; max-height: 88dvh; overflow: hidden; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 20px 60px #13202540; }
+.filter-dialog__header, .filter-dialog__footer { flex-shrink: 0; }
+.filter-dialog__body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.filter-dialog__footer { padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 640px) {
+  .filter-dialog { align-items: center; padding: 24px; }
+  .filter-dialog__panel { max-width: 640px; max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); border-radius: 24px; }
+}
+
+/* Native looping hero video: fixed cover area prevents layout shifts. */
+.home-hero { background: #132025; isolation: isolate; }
+.home-hero__video { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+.home-hero__overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,19,25,.78), rgba(8,19,25,.35)), linear-gradient(0deg, rgba(8,19,25,.62), transparent 60%); }
+.home-hero__eyebrow { color: #fff; text-shadow: 0 1px 6px #0009; }
+.home-hero__title { text-shadow: 0 3px 22px #0006; }
+.home-hero__description { text-shadow: 0 1px 8px #000a; }
+.home-hero__playback { margin-top: 18px; border: 1px solid #ffffff80; border-radius: 999px; padding: 7px 13px; color: #fff; background: #132025a6; font-size: 12px; }
+.home-hero__playback:hover { background: #132025; }
+@media (max-width: 639px) { .home-hero__overlay { background: linear-gradient(180deg, #081319b8, #081319a3); } }
+/* Edge-to-edge trip gallery; the lightbox retains the full composition. */
+.trip-gallery { position: relative; min-width: 0; overflow: hidden; border-radius: 20px; background: transparent; isolation: isolate; }
+.trip-gallery__track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; border-radius: inherit; background: transparent; overscroll-behavior-x: contain; }
+.trip-gallery__track::-webkit-scrollbar { display: none; }
+.trip-gallery__slide { flex: 0 0 100%; min-width: 0; height: clamp(300px, 52vw, 620px); scroll-snap-align: start; scroll-snap-stop: always; display: flex; align-items: center; justify-content: center; padding: 0; }
+@media (min-width: 1024px) { .trip-gallery__slide { height: clamp(360px, 32vw, 440px); } }
+.trip-gallery__slide img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.trip-gallery__controls { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 12px; font-size: 14px; font-weight: 600; }
+.trip-gallery__controls button { width: 44px; height: 44px; border: 1px solid #d8d5cf; border-radius: 50%; background: white; font-size: 22px; transition: background .2s; }
+.trip-gallery__controls button:hover:not(:disabled) { background: #eeeae3; }
+.trip-gallery__controls button:disabled { opacity: .3; cursor: default; }
+.trip-gallery__hint { z-index: 1; position: absolute; bottom: 18px; left: 16px; right: 16px; text-align: center; font-size: 12px; color: white; text-shadow: 0 1px 5px #000; pointer-events: none; }
+.trip-gallery::after { content: ''; position: absolute; inset: 60% 0 0; background: linear-gradient(transparent, #0005); pointer-events: none; }
+.trip-gallery__controls--overlay { z-index: 1; position: absolute; inset: 0; justify-content: space-between; padding: clamp(12px, 2.5vw, 28px); pointer-events: none; color: white; }
+.trip-gallery__controls--overlay button { display: flex; align-items: center; justify-content: center; pointer-events: auto; width: 48px; height: 48px; background: #ffffff14; border-color: #ffffff70; color: #000; backdrop-filter: blur(8px); box-shadow: 0 2px 14px #0002; transition: background .3s, transform .3s, opacity .3s; }
+.trip-gallery__controls--overlay button:hover:not(:disabled) { background: #ffffff35; transform: scale(1.08); }
+.trip-gallery__controls--overlay button:active:not(:disabled) { transform: scale(.95); }
+.trip-gallery__controls--overlay button:disabled { opacity: .35; }
+.trip-gallery__controls--overlay span { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); padding: 4px 12px; border-radius: 20px; background: #0003; backdrop-filter: blur(8px); text-shadow: 0 1px 4px #0006; }
+.trip-gallery button:focus-visible, .trip-gallery__track:focus-visible { outline: 2px solid white; outline-offset: -4px; }
+@media (prefers-reduced-motion: reduce) { .trip-gallery__controls--overlay button { transition: none; } }
+.trip-gallery__lightbox { padding: 60px 12px 12px; }
+html { scrollbar-gutter: stable; }
+.photo-viewer { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.photo-viewer__panel { position: relative; width: 100%; max-height: calc(100dvh - 32px); overflow: hidden; background: white; border-radius: 24px; box-shadow: 0 20px 60px #0003; animation: photo-viewer-in .42s cubic-bezier(.22,1,.36,1) both; }
+.trip-gallery__stage { position: relative; height: min(60vh, 620px); height: min(60dvh, 620px); overflow: hidden; }
+.trip-gallery__frame { position: absolute; inset: 0; opacity: 0; transform: scale(.985); transition: opacity .42s ease, transform .55s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+.trip-gallery__frame.is-active { opacity: 1; transform: scale(1); z-index: 1; }
+.trip-gallery__frame img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .3s ease; }
+.trip-gallery__frame img.is-ready { opacity: 1; }
+.trip-gallery__loading { position: absolute; inset: 0; display: grid; place-items: center; color: #687073; font-size: 14px; }
+.trip-gallery__controls button { color: #000; display: flex; align-items: center; justify-content: center; }
+@keyframes photo-viewer-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .photo-viewer__panel { animation: none; } .trip-gallery__frame, .trip-gallery__frame img { transition: none; } }
+.trip-detail-save { width: auto; min-width: 90px; height: 44px; gap: 8px; padding: 0 14px; border: 1px solid #b89168; background: #f5ebdd; color: #795432; font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px #79543215; }
+.trip-detail-save[aria-pressed="true"] { background: #fbe7e6; border-color: #bc4a48; color: #a32d34; }
+.enquiry-panel { padding-bottom: 0 !important; }
+.enquiry-form { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.enquiry-header { flex-shrink: 0; padding: 24px 64px 18px 24px; border-bottom: 1px solid #e6e3dd; }
+.enquiry-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 24px 24px; }
+.enquiry-body input, .enquiry-body textarea { font-size: 16px; min-width: 0; }
+.enquiry-footer { flex-shrink: 0; border-top: 1px solid #e6e3dd; padding: 16px 24px max(16px, env(safe-area-inset-bottom, 0px)); background: white; }
+.enquiry-success { overflow-y: auto; padding-top: 64px; }
+@media (max-width: 380px) { .enquiry-header { padding-left: 16px; } .enquiry-body, .enquiry-footer { padding-left: 16px; padding-right: 16px; } }
+@media (prefers-reduced-motion: reduce) { .trip-gallery__track { scroll-behavior: auto; } .enquiry-panel { animation: none; } }
