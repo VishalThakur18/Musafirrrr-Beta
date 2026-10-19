@@ -36,27 +36,77 @@ function FitPhoto({ im, alt }) {
 function Gallery({ images, title }) {
     const [i, setI] = useState(0);
     const [lightbox, setLightbox] = useState(false);
-    const n = images ? images.length : 0;
-    const list = n ? images : [null];
-    const rest = list.map((im, idx) => ({ im, idx })).filter(o => o.idx !== i).slice(0, 3);
-    const tile = { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' };
-    return (React.createElement(React.Fragment, null,
-        React.createElement("div", { className: cls('grid gap-2', n > 1 ? 'md:grid-cols-[2fr_1fr]' : ''), style: { height: GALLERY_H, gridTemplateRows: 'minmax(0, 1fr)' } },
-            React.createElement("button", { type: "button", onClick: () => setLightbox(true), className: "rounded-2xl", style: { position: 'relative', display: 'block', width: '100%', height: '100%', overflow: 'hidden', padding: 0 } },
-                React.createElement(FitPhoto, { im: list[i], alt: title }),
-                n > 0 && React.createElement("span", { style: { position: 'absolute', bottom: 12, right: 12, borderRadius: 999, padding: '6px 12px', fontSize: 12.5, fontWeight: 600, color: '#132025', background: 'rgba(255,255,255,.92)' } },
-                    n === 1 ? 'View photo' : 'View all ' + n + ' photos')),
-                        n > 1 && React.createElement("div", { className: "hidden md:grid gap-2", style: { height: '100%', minHeight: 0, gridTemplateRows: 'repeat(' + rest.length + ', minmax(0, 1fr))' } }, rest.map(o => (React.createElement("button", { key: o.idx, type: "button", onClick: () => setI(o.idx), className: "rounded-2xl", style: { position: 'relative', overflow: 'hidden', padding: 0, minHeight: 0 } },
-                    React.createElement("img", { src: imgSrc(o.im), alt: "", style: tile })))))),
-        n > 1 && React.createElement("div", { className: "md:hidden mt-2 u-scroll" },
-            React.createElement("div", { className: "flex gap-2" }, list.map((im, k) => (React.createElement("button", { key: k, type: "button", onClick: () => setI(k), className: cls('w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2', i === k ? 'border-ink' : 'border-transparent') },
-                React.createElement("img", { src: imgSrc(im), alt: "", className: "w-full h-full object-cover" })))))),
-                React.createElement(Modal, { open: lightbox, onClose: () => setLightbox(false), size: "lg", label: "Trip photos" },
-            React.createElement("div", { className: "p-3 sm:p-4" },
-                React.createElement("div", { style: { height: 'min(60vh, 520px)', borderRadius: 16, overflow: 'hidden' } },
-                    React.createElement(FitPhoto, { im: list[i], alt: title })),
-                React.createElement("div", { className: "mt-3 flex gap-2 justify-center flex-wrap" }, list.map((im, k) => (React.createElement("button", { key: k, type: "button", onClick: () => setI(k), className: cls('w-14 h-14 rounded-lg overflow-hidden border-2', i === k ? 'border-ink' : 'border-line') },
-                    React.createElement("img", { src: imgSrc(im), alt: "", className: "w-full h-full object-cover" })))))))));
+    const [photo, setPhoto] = useState(0);
+    const track = useRef(null);
+    const animation = useRef(null);
+    const target = useRef(0);
+    const cancelSlide = () => {
+        cancelAnimationFrame(animation.current);
+        animation.current = null;
+        if (track.current) track.current.style.scrollSnapType = '';
+    };
+    useEffect(() => () => cancelAnimationFrame(animation.current), []);
+    const list = images && images.length ? images : [null];
+    const move = index => {
+        const node = track.current;
+        if (!node) return;
+        cancelSlide();
+        target.current = Math.max(0, Math.min(list.length - 1, index));
+        const start = node.scrollLeft;
+        const end = target.current * node.clientWidth;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            node.scrollLeft = end;
+            return;
+        }
+        node.style.scrollSnapType = 'none';
+        const started = performance.now();
+        const step = now => {
+            const progress = Math.min(1, (now - started) / 720);
+            const eased = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
+            node.scrollLeft = start + (end - start) * eased;
+            if (progress < 1) animation.current = requestAnimationFrame(step);
+            else { cancelSlide(); setI(target.current); }
+        };
+        animation.current = requestAnimationFrame(step);
+    };
+    return React.createElement(React.Fragment, null,
+        React.createElement("section", { className: "trip-gallery", "aria-label": "Trip photos", "aria-roledescription": "carousel" },
+            React.createElement("div", { ref: track, className: "trip-gallery__track", tabIndex: 0, onPointerDown: cancelSlide, onWheel: cancelSlide,
+                onScroll: e => { const node = e.currentTarget; setI(Math.round(node.scrollLeft / node.clientWidth)); },
+                onKeyDown: e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); move(Math.max(0, Math.min(list.length - 1, (animation.current ? target.current : i) + (e.key === 'ArrowRight' ? 1 : -1)))); } }
+            }, list.map((im, k) => React.createElement("button", { key: k, type: "button", className: "trip-gallery__slide", onClick: () => { cancelSlide(); setPhoto(k); setLightbox(true); }, "aria-label": `Open photo ${k + 1} of ${list.length}`, tabIndex: i === k ? 0 : -1 },
+                React.createElement("img", { src: imgSrc(im), alt: `${title} - photo ${k + 1}`, loading: k === 0 ? "eager" : "lazy", decoding: "async", fetchPriority: k === 0 ? "high" : "auto" })))),
+            list.length > 1 && React.createElement("div", { className: "trip-gallery__controls trip-gallery__controls--overlay" },
+                React.createElement("button", { type: "button", onClick: () => move((animation.current ? target.current : i) - 1), disabled: i === 0, "aria-label": "Previous photo" }, React.createElement(Icon, { name: "chev", size: 22, className: "rotate-180" })),
+                React.createElement("span", { "aria-live": "polite" }, `${i + 1} / ${list.length}`),
+                React.createElement("button", { type: "button", onClick: () => move((animation.current ? target.current : i) + 1), disabled: i === list.length - 1, "aria-label": "Next photo" }, React.createElement(Icon, { name: "chev", size: 22 }))),
+            React.createElement("p", { className: "trip-gallery__hint" }, list.length > 1 ? "Swipe to explore / Tap a photo to enlarge" : "Tap photo to enlarge")),
+        React.createElement(Modal, { open: lightbox, onClose: () => setLightbox(false), size: "lg", label: "Trip photos", photoViewer: true },
+            React.createElement("div", { className: "trip-gallery__lightbox", onKeyDown: e => {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    setPhoto(current => Math.max(0, Math.min(list.length - 1, current + (e.key === 'ArrowRight' ? 1 : -1))));
+                }
+            } },
+                React.createElement("div", { className: "trip-gallery__stage" },
+                    list.map((im, k) => React.createElement(GalleryPhoto, { key: imgSrc(im) + k, src: imgSrc(im), active: photo === k, load: Math.abs(photo - k) <= 1, alt: `${title} - photo ${k + 1}` }))),
+                list.length > 1 && React.createElement("div", { className: "trip-gallery__controls" },
+                    React.createElement("button", { type: "button", disabled: photo === 0, onClick: () => setPhoto(current => Math.max(0, current - 1)), "aria-label": "Previous photo" }, React.createElement(Icon, { name: "chev", size: 22, className: "rotate-180" })),
+                    React.createElement("span", { "aria-live": "polite" }, `${photo + 1} / ${list.length}`),
+                    React.createElement("button", { type: "button", disabled: photo === list.length - 1, onClick: () => setPhoto(current => Math.min(list.length - 1, current + 1)), "aria-label": "Next photo" }, React.createElement(Icon, { name: "chev", size: 22 }))))));
+}
+
+/** Keep decoded photos mounted so navigation crossfades without layout shifts. */
+function GalleryPhoto({ src, active, load, alt }) {
+    const [ready, setReady] = useState(false);
+    const [failed, setFailed] = useState(false);
+    const [requested, setRequested] = useState(load);
+    useEffect(() => { if (load) setRequested(true); }, [load]);
+    return React.createElement("div", { className: cls('trip-gallery__frame', active && 'is-active'), "aria-hidden": !active },
+        requested && React.createElement("img", { src, alt, decoding: "async", className: ready ? 'is-ready' : '',
+            onLoad: async e => { const image = e.currentTarget; try { await image.decode(); } catch (_) {} setReady(true); },
+            onError: () => setFailed(true) }),
+        !ready && React.createElement("span", { className: "trip-gallery__loading", role: active ? "status" : undefined }, failed ? "This photo could not load." : "Loading photo..."));
 }
 
 /** Enquiry form shown on the trip page. */
@@ -116,7 +166,7 @@ function EnquiryModal({ trip, org, open, onClose }) {
         }
     };
     const isTraveller = !!me && me.role === 'TRAVELLER';
-    return (React.createElement(Modal, { open: open, onClose: onClose, label: "Send an enquiry" }, done ? (React.createElement("div", { className: "p-7 sm:p-9 text-center" },
+    return (React.createElement(Modal, { open: open, onClose: onClose, label: "Send an enquiry", responsive: true }, done ? (React.createElement("div", { className: "enquiry-success p-7 sm:p-9 text-center" },
         React.createElement("div", { className: "mx-auto w-16 h-16 rounded-full bg-[#E8F1EC] text-ok flex items-center justify-center" },
             React.createElement(Icon, { name: "check", size: 28 })),
         React.createElement("h2", { className: "mt-5 text-2xl font-extrabold tracking-tight" }, "You're on your way"),
@@ -129,10 +179,11 @@ function EnquiryModal({ trip, org, open, onClose }) {
         React.createElement("div", { className: "mt-6 flex flex-col gap-3" },
             React.createElement(WhatsAppButton, { trip: trip, org: org, size: "lg" }),
             React.createElement(InstagramButton, { org: org, size: "lg" }),
-            React.createElement(Btn, { variant: "ghost", onClick: () => { onClose(); go(isTraveller ? '/traveller/my-trips' : '/explore'); } }, isTraveller ? 'See my enquiries' : 'Keep exploring trips')))) : (React.createElement("form", { onSubmit: submit, className: "p-6 sm:p-8" },
-        React.createElement("h2", { className: "text-[22px] font-extrabold tracking-tight pr-8" }, "Enquire about this trip"),
+            React.createElement(Btn, { variant: "ghost", onClick: () => { onClose(); go(isTraveller ? '/traveller/my-trips' : '/explore'); } }, isTraveller ? 'See my enquiries' : 'Keep exploring trips')))) : (React.createElement("form", { onSubmit: submit, className: "enquiry-form" },
+        React.createElement("h2", { className: "enquiry-header text-[22px] font-extrabold tracking-tight" }, "Enquire about this trip"),
+        React.createElement("div", { className: "enquiry-body" },
         React.createElement("div", { className: "mt-4 rounded-2xl bg-sand border border-line p-4 flex gap-3.5" },
-            React.createElement("img", { src: imgSrc(coverOf(trip)), alt: "", className: "w-16 h-16 rounded-xl object-cover" }),
+            React.createElement("img", { src: tripCoverSrc(trip), alt: "", className: "w-16 h-16 rounded-xl object-cover" }),
             React.createElement("div", { className: "min-w-0" },
                 React.createElement("div", { className: "font-bold text-[15px] truncate" }, trip.title),
                 React.createElement("div", { className: "text-[13px] text-muted mt-0.5" },
@@ -154,18 +205,20 @@ function EnquiryModal({ trip, org, open, onClose }) {
                 React.createElement(Input, { type: "number", min: "1", max: "20", value: form.travellerCount, onChange: e => set({ travellerCount: e.target.value }) })),
             React.createElement(Field, { label: "Message", className: "sm:col-span-2" },
                 React.createElement(TextArea, { rows: 3, value: form.message, onChange: e => set({ message: e.target.value }) }))),
-        React.createElement(Btn, { type: "submit", size: "lg", className: "w-full mt-6", loading: busy }, busy ? 'Sending' : 'Send enquiry'),
+        ),
+        React.createElement("div", { className: "enquiry-footer" },
+        React.createElement(Btn, { type: "submit", size: "lg", className: "w-full", loading: busy }, busy ? 'Sending' : 'Send enquiry'),
         React.createElement("p", { className: "mt-3 text-[12.5px] text-muted text-center" },
             "Your details go only to ",
             org.name,
-            ". No payment happens on Musafirrrr.")))));
+            ". No payment happens on Musafirrrr."))))));
 }
 
 /** Trip details page (#/trip/:slug). */
 function TripDetailPage({ slug }) {
     const s = useStore();
     const { user: viewer } = useAuth();
-    const { loading, error, data: dbTrip, reload } = useAsync(() => tripApi.bySlug(slug), [slug]);
+    const { loading, error, data: dbTrip, reload } = useAsync(() => tripApi.bySlug(slug), [slug, s.trips]);
     const { data: moreData } = useAsync(
         () => dbTrip ? tripApi.moreFrom(dbTrip.organizerId, dbTrip.id) : Promise.resolve([]),
         [dbTrip ? dbTrip.id : null]
@@ -209,7 +262,7 @@ function TripDetailPage({ slug }) {
                 React.createElement(Link, { to: '/explore?q=' + encodeURIComponent(trip.destination), className: "hover:text-ink" }, trip.destination),
                 React.createElement(Icon, { name: "chev", size: 12 }),
                 React.createElement("span", { className: "text-slatey truncate" }, trip.title)),
-            React.createElement(Gallery, { images: trip.images, title: trip.title }),
+            React.createElement(Gallery, { key: trip.slug, images: tripImages(trip), title: trip.title }),
             React.createElement("div", { className: "grid lg:grid-cols-[1fr_380px] gap-10 xl:gap-14 mt-8" },
                 React.createElement("div", { className: "min-w-0" },
                     React.createElement("div", { className: "flex items-start justify-between gap-4" },
@@ -231,7 +284,7 @@ function TripDetailPage({ slug }) {
                                     " (",
                                     trip.reviews,
                                     " reviews)"))),
-                        React.createElement(WishlistButton, { tripId: trip.id, floating: false, className: "shrink-0 w-11 h-11" })),
+                        React.createElement(WishlistButton, { tripId: trip.id, floating: false, showLabel: true, className: "trip-detail-save shrink-0" })),
                     React.createElement("div", { className: "mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3" }, [['cal', 'Dates', dateRange(trip.startDate, trip.endDate)],
                         ['clock', 'Duration', dur(trip)],
                         ['users', 'Group', `${trip.totalSpots} max`],

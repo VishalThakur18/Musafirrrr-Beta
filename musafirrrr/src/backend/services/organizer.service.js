@@ -239,6 +239,7 @@ const organizerApi = {
     async saveTrip(tripId, payload) {
         const { data, error } = await window.sbClient.rpc("save_trip", { p_trip_id: tripId, p: payload });
         if (error) throw error;
+        dataService.invalidate();
         return data;
     },
 
@@ -263,6 +264,7 @@ const organizerApi = {
             .from("trips").update({ status }).eq("id", id).select("id");
         if (error) throw error;
         if (!data || data.length === 0) throw new Error("You can't change this trip.");
+        dataService.invalidate();
     },
 
     async setTripSpots(id, spotsLeft, status) {
@@ -272,6 +274,7 @@ const organizerApi = {
             .from("trips").update(patch).eq("id", id).select("id");
         if (error) throw error;
         if (!data || data.length === 0) throw new Error("You can't change this trip.");
+        dataService.invalidate();
     },
 
     async deleteTrip(id) {
@@ -283,6 +286,7 @@ const organizerApi = {
             throw error;
         }
         if (!data || data.length === 0) throw new Error("You can't delete this trip.");
+        dataService.invalidate();
     },
 
     /** Copies a trip (photos, itinerary, inclusions) as a new draft. Returns the new trip id. */

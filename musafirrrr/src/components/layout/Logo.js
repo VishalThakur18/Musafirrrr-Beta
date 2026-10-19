@@ -6,7 +6,7 @@
    ============================================================ */
 
 /* Path is relative to index.html (NOT to this file). */
-const LOGO_URL = 'src/assets/logo.jpeg';
+const LOGO_URL = 'src/assets/Logo.png';
 
 /** Brand logo (image). `tone="light"` is used on dark backgrounds (footer). */
 function Logo({ className, tone = 'ink' }) {

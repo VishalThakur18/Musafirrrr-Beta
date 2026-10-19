@@ -66,18 +66,7 @@ function dbToPublicOrganizer(o) {
     };
 }
 
-const tripApi = {
-    /** One visible trip with organizer, photos, itinerary, inclusions and review stats. */
-    async bySlug(slug) {
-        const { data, error } = await window.sbClient
-            .from('trips')
-            .select('*, organizers(id, slug, name, based_in, bio, logo_url, whatsapp_number, instagram_handle, verified, years_active), trip_images(image_url, position), itinerary_days(day_number, title, description), trip_inclusions(item, kind), reviews(rating)')
-            .eq('slug', slug)
-            .maybeSingle();
-        if (error)
-            throw error;
-        if (!data)
-            return null;
+function publicTripFromRow(data) {
         const t = dbToTrip(data);
         const imgs = (data.trip_images || []).sort((a, b) => a.position - b.position).map(x => ({ k: 'file', url: x.image_url }));
         t.images = imgs.length ? imgs : [coverOf(t)];
@@ -93,17 +82,44 @@ const tripApi = {
         t.organizer = dbToPublicOrganizer(data.organizers);
         t.fromDb = true;
         return t;
-    },
+}
 
+const tripApi = {
+/** One visible trip with organizer, photos, itinerary, inclusions and review stats. */
+async bySlug(slug) {
+    return dataService.cachedRead('detail:' + slug, async () => {
+        const { data, error } = await window.sbClient
+            .from('trips')
+            .select(`
+                *,
+                organizers(
+                    id, slug, name, based_in, bio,
+                    logo_url, whatsapp_number,
+                    instagram_handle, verified, years_active
+                ),
+                trip_images(image_url, position),
+                itinerary_days(day_number, title, description),
+                trip_inclusions(item, kind),
+                reviews(rating)
+            `)
+            .eq('slug', slug)
+            .maybeSingle();
+
+        if (error) {
+            throw error;
+        }
+
+        if (!data) {
+            return null;
+        }
+
+        return publicTripFromRow(data);
+    });
+},
     /** Up to three other published trips by the same organizer. */
     async moreFrom(organizerId, excludeId) {
-        const { data, error } = await window.sbClient
-            .from('trips').select('*')
-            .eq('organizer_id', organizerId).eq('status', 'published').neq('id', excludeId)
-            .order('start_date', { ascending: true }).limit(3);
-        if (error)
-            throw error;
-        return (data || []).map(r => ({ ...dbToTrip(r), fromDb: true }));
+        const trips = await dataService.loadPublishedTrips();
+        return trips.filter(t => t.organizerId === organizerId && t.id !== excludeId && t.status === 'PUBLISHED').slice(0, 3);
     },
 
     /** Sends an enquiry. The database trigger sets organizer, traveller and status. */
@@ -117,7 +133,10 @@ const tripApi = {
     },
 
     /** Public organizer page: the organizer plus their visible trips. */
-    async organizerPage(slug) {
+    organizerPage(slug) {
+        return dataService.cachedRead('organizer:' + slug, () => this.fetchOrganizerPage(slug));
+    },
+    async fetchOrganizerPage(slug) {
         const { data, error } = await window.sbClient
             .from('organizers')
             .select('id, slug, name, based_in, bio, logo_url, banner_url, whatsapp_number, instagram_handle, verified, years_active, created_at')

@@ -25,7 +25,7 @@ function TravellerDashboard() {
             })
             .catch(error => {
                 console.error(
-                    "Could not load traveller trips; using demo data:",
+                    "Could not refresh traveller trips:",
                     error
                 );
             });
@@ -33,7 +33,7 @@ function TravellerDashboard() {
         return () => {
             active = false;
         };
-    }, [auth.ready, me && me.id, me && me.role]);
+    }, [auth.ready, me && me.id, me && me.role, s.trips]);
 
     React.useEffect(() => {
         let active = true;
@@ -340,7 +340,7 @@ function EnquiryRowTraveller({ e, t }) {
         },
 
         React.createElement("img", {
-            src: imgSrc(t.coverImage || t.coverImageUrl),
+            src: tripCoverSrc(t),
             alt: "",
             className: "w-20 h-20 rounded-xl object-cover shrink-0"
         }),

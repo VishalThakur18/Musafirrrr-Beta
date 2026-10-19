@@ -3,24 +3,39 @@
    PAGE — HOME  (#/)
    ============================================================ */
 
+// Traveller-category photos. Replace these files to update the tiles.
+const CATEGORY_PHOTOS = {
+    Weekend: 'assets/images/categories/weekend.jpg',
+    Backpacking: 'assets/images/categories/backpacking.jpg',
+    Trek: 'assets/images/categories/trekking.jpg',
+    Beach: 'assets/images/categories/beach.jpg',
+    'All Girls': 'assets/images/categories/all-girls.jpg',
+    Adventure: 'assets/images/categories/adventure.jpg',
+    International: 'assets/images/categories/international.jpg',
+    'Solo Friendly': 'assets/images/categories/solo.jpg'
+};
+
 /** Home page hero. */
 function Hero() {
-    return (React.createElement("section", { className: "relative" },
+    const videoRef = useRef(null);
+    const [playing, setPlaying] = useState(false);
+    return (React.createElement("section", { className: "relative home-hero" },
         React.createElement("div", { className: "absolute inset-0 overflow-hidden" },
-            React.createElement("img", { src: sceneURL('mountains', 9001), alt: "", "aria-hidden": "true", className: "w-full h-full object-cover" }),
-            React.createElement("div", { className: "absolute inset-0 bg-gradient-to-b from-ink/55 via-ink/35 to-ink/65" })),
+            React.createElement("video", { ref: videoRef, src: "assets/videos/home-hero.mp4", autoPlay: true, muted: true, loop: true, playsInline: true, preload: "metadata", poster: sceneURL('mountains', 9001), "aria-hidden": "true", tabIndex: -1, onPlay: () => setPlaying(true), onPause: () => setPlaying(false), className: "home-hero__video" }),
+            React.createElement("div", { className: "home-hero__overlay" })),
         React.createElement("div", { className: "relative max-w-shell mx-auto px-5 lg:px-8 pt-16 pb-10 md:pt-24 md:pb-16" },
             React.createElement("div", { className: "max-w-3xl" },
-                React.createElement("p", { className: "text-beige text-[14px] font-semibold tracking-[.14em]" },
+                React.createElement("p", { className: "home-hero__eyebrow text-[14px] font-semibold tracking-[.14em]" },
                     tripService.published().length,
                     " TRIPS LIVE FROM ",
-                    ORGANIZERS.length,
+                    new Set(tripService.published().map(t => t.organizerId)).size,
                     " TRAVEL COMMUNITIES"),
-                React.createElement("h1", { className: "mt-4 text-white font-extrabold tracking-[-0.035em] leading-[.95] text-[46px] sm:text-[68px] lg:text-[84px]" },
+                React.createElement("h1", { className: "home-hero__title mt-4 text-white font-extrabold tracking-[-0.035em] leading-[.95] text-[46px] sm:text-[68px] lg:text-[84px]" },
                     "All group trips.",
                     React.createElement("br", null),
                     "One place."),
-                React.createElement("p", { className: "mt-5 text-white/85 text-[17px] sm:text-[19px] leading-relaxed max-w-xl" }, "Discover your next adventure from trusted travel communities and organizers across India \u2014 then talk to them directly.")),
+                React.createElement("p", { className: "home-hero__description mt-5 text-white text-[17px] sm:text-[19px] leading-relaxed max-w-xl" }, "Discover your next adventure from trusted travel communities and organizers across India \u2014 then talk to them directly.")),
+            React.createElement("button", { type: "button", className: "home-hero__playback", "aria-label": playing ? 'Pause background video' : 'Play background video', onClick: () => { const video = videoRef.current; if (!video) return; if (video.paused) video.play().catch(() => {}); else video.pause(); } }, playing ? 'Pause video' : 'Play video'),
             React.createElement("div", { className: "mt-8 md:mt-10 max-w-5xl" },
                 React.createElement(SearchBar, null)),
             React.createElement("div", { className: "mt-6 u-scroll -mx-5 px-5 lg:mx-0 lg:px-0" },
@@ -30,7 +45,7 @@ function Hero() {
 /** Destination picture tile. */
 function DestinationTile({ name, kind, seed }) {
     return (React.createElement("button", { onClick: () => go('/explore?q=' + encodeURIComponent(name)), className: "group relative w-[168px] sm:w-[200px] shrink-0 rounded-2xl overflow-hidden aspect-[3/4] text-left" },
-        React.createElement("img", { src: sceneURL(kind, seed), alt: name, loading: "lazy", className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
+        React.createElement("img", { src: destinationImage({ destination: name }) || sceneURL(kind, seed), alt: name, loading: "lazy", decoding: "async", className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
         React.createElement("span", { className: "absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/10 to-transparent" }),
         React.createElement("span", { className: "absolute left-4 right-4 bottom-4" },
             React.createElement("span", { className: "block text-white font-bold text-[17px] tracking-tight" }, name),
@@ -42,10 +57,11 @@ function DestinationTile({ name, kind, seed }) {
 /** Home page (#/). */
 function HomePage() {
     const s = useStore();
-    const [loading, setLoading] = useState(true);
-    useEffect(() => { const t = setTimeout(() => setLoading(false), 450); return () => clearTimeout(t); }, []);
+    const loading = s.tripsLoading;
     const pub = tripService.published();
-    const trending = [...pub].sort((a, b) => b.rating - a.rating || a.price - b.price).slice(0, 8);
+    // Include community uploads for every destination.
+    const trending = [...pub]
+        .sort((a, b) => b.rating - a.rating || a.price - b.price).slice(0, 8);
     const soon = [...pub].filter(t => daysUntil(t.startDate) > 0).sort((a, b) => d(a.startDate) - d(b.startDate)).slice(0, 4);
     const dests = [['Manali', 'mountains', 1], ['Goa', 'beach', 2], ['Meghalaya', 'forest', 3], ['Kerala', 'backwater', 4], ['Rishikesh', 'valley', 5], ['Ladakh', 'mountains', 6], ['Kashmir', 'snow', 7], ['Spiti', 'mountains', 8], ['Jaisalmer', 'desert', 9]];
     return (React.createElement(React.Fragment, null,
@@ -66,7 +82,7 @@ function HomePage() {
                 React.createElement(TripGrid, { trips: soon, loading: loading, cols: "4" })),
             React.createElement("section", { className: "pt-16 md:pt-24" },
                 React.createElement(SectionHead, { title: "Trips for every kind of traveller" }),
-                React.createElement("div", { className: "grid gap-4 sm:grid-cols-2 lg:grid-cols-4" }, [['Weekend escapes', 'Weekend', 'Three days, no leave needed.', 'valley', 21],
+                React.createElement(ScrollRow, { label: "Trips for every kind of traveller" }, [['Weekend escapes', 'Weekend', 'Three days, no leave needed.', 'valley', 21],
                     ['Backpacking', 'Backpacking', 'Long routes, small budgets.', 'mountains', 22],
                     ['Trekking', 'Trek', 'Guided climbs for first-timers too.', 'snow', 23],
                     ['Beach trips', 'Beach', 'Coastline, islands, backwaters.', 'beach', 24],
@@ -76,12 +92,12 @@ function HomePage() {
                     ['Solo friendly', 'Solo Friendly', 'Come alone, leave with people.', 'desert', 28]
                 ].map(([title, val, sub, kind, seed]) => {
                     const isGroup = GROUPS.includes(val);
-                    return (React.createElement("button", { key: title, onClick: () => go('/explore?' + (isGroup ? 'group=' : 'cat=') + encodeURIComponent(val)), className: "group text-left rounded-2xl border border-line bg-lightbeige overflow-hidden hover:shadow-lift hover:border-ink/25 transition-all duration-200" },
-                        React.createElement("div", { className: "h-28 overflow-hidden" },
-                            React.createElement("img", { src: sceneURL(kind, seed), alt: "", className: "w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-105" })),
-                        React.createElement("div", { className: "p-4" },
-                            React.createElement("div", { className: "font-bold text-[15.5px] tracking-tight" }, title),
-                            React.createElement("div", { className: "text-[13px] text-muted mt-1" }, sub))));
+                    return (React.createElement("button", { key: title, onClick: () => go('/explore?' + (isGroup ? 'group=' : 'cat=') + encodeURIComponent(val)), className: "group relative w-[168px] sm:w-[200px] shrink-0 rounded-2xl overflow-hidden aspect-[3/4] text-left" },
+                        React.createElement("img", { src: CATEGORY_PHOTOS[val] || sceneURL(kind, seed), alt: "", loading: "lazy", decoding: "async", style: { objectPosition: val === 'Adventure' ? '70% center' : val === 'Trek' ? '35% center' : 'center' }, className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
+                        React.createElement("span", { className: "absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent" }),
+                        React.createElement("span", { className: "absolute left-4 right-4 bottom-4" },
+                            React.createElement("span", { className: "block text-white font-bold text-[17px] tracking-tight" }, title),
+                            React.createElement("span", { className: "block text-white/85 text-[12.5px] mt-0.5" }, sub))));
                 }))),
             React.createElement("section", { className: "pt-16 md:pt-24" },
                 React.createElement("div", { className: "rounded-3xl bg-sand border border-line p-7 sm:p-12" },

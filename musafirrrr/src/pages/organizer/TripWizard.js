@@ -11,8 +11,10 @@ const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 function ImageUploader({ images, onChange }) {
     const [drag, setDrag] = useState(false);
     const fileRef = useRef(null);
+    const processingPhotos = useRef(false);
     const add = list => onChange([...images, ...list].slice(0, 8));
-    const readFiles = files => {
+    const readFiles = async files => {
+        if (processingPhotos.current) return;
         const picked = Array.from(files);
         if (picked.some(f => !PHOTO_TYPES.test(f.type)))
             toast('Only JPG, PNG or WebP photos are supported.', 'bad');
@@ -24,18 +26,18 @@ function ImageUploader({ images, onChange }) {
             toast(big.name + ' is larger than 5 MB.', 'bad');
             return;
         }
-        let done = [];
-        arr.forEach(f => {
-            const r = new FileReader();
-            r.onload = () => {
-                done = [...done, { k: 'file', url: r.result, name: f.name, file: f }];
-                if (done.length === arr.length) {
-                    add(done);
-                    toast(arr.length + ' photo' + (arr.length > 1 ? 's' : '') + ' added');
-                }
-            };
-            r.readAsDataURL(f);
-        });
+        processingPhotos.current = true;
+        try {
+            const done = [];
+            // Sequential processing limits peak memory and keeps the selected order.
+            for (const original of arr) {
+                const file = await optimizeTripPhoto(original);
+                done.push({ k: 'file', url: await photoDataURL(file), name: file.name, file });
+            }
+            add(done);
+            toast(done.length + ' photo' + (done.length > 1 ? 's' : '') + ' added');
+        } catch (error) { toast(error.message || 'Could not read photos.', 'bad'); }
+        finally { processingPhotos.current = false; }
     };
     const move = (i, dir) => {
         const n = [...images];

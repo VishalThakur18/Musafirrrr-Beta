@@ -22,6 +22,15 @@ function RedirectHome({ me }) {
 function App() {
     const s = useStore();
     const hash = useRoute();
+    useEffect(() => {
+        dataService.loadIntoStore().catch(() => {});
+    }, [hash]);
+    useEffect(() => {
+        const refresh = () => { if (document.visibilityState === 'visible') dataService.loadIntoStore().catch(() => {}); };
+        window.addEventListener('focus', refresh);
+        window.addEventListener('online', refresh);
+        return () => { window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); };
+    }, []);
     const { path, parts, params } = parsePath(hash);
     const { user: me, ready } = useAuth();
     useEffect(() => {
@@ -89,6 +98,9 @@ function App() {
     const bare = path === '/login' || path === '/signup';
     return (React.createElement(React.Fragment, null,
         React.createElement(Navbar, null),
+        s.tripsError && React.createElement("div", { role: "alert", className: "max-w-shell mx-auto px-5 py-4 text-sm" },
+            s.trips.length ? "Trip updates are unavailable. Showing the last loaded results. " : "Trips could not be loaded. Please retry. ",
+            React.createElement("button", { className: "underline font-semibold", onClick: () => dataService.loadIntoStore().catch(() => {}) }, "Retry")),
         React.createElement("div", { key: hash, className: "fade-in" }, page),
         !bare && React.createElement(Footer, null),
         React.createElement(MobileTabs, null),

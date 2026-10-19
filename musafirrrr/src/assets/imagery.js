@@ -124,3 +124,23 @@ function imgSrc(ref) {
 
 /** List of all available scene kinds. */
 const SCENE_KINDS = Object.keys(SCENES);
+
+/** Shared presentation-only gallery. Never modifies API or saved trip records.
+ * Per-trip config wins, then uploaded photos, then destination photos, then scenes.
+ * All pages resolve the same URLs, including direct links and page refreshes.
+ */
+function tripImages(trip) {
+    const configured = TRIP_IMAGES[trip.slug];
+    if (configured && configured.length)
+        return [...new Set((Array.isArray(configured) ? configured : [configured]).map(imgSrc))];
+    const existing = [trip.coverImage || trip.coverImageUrl, ...(trip.images || [])].filter(Boolean);
+    const photos = existing.filter(ref => typeof ref === 'string'
+        ? !ref.startsWith('data:image/svg+xml')
+        : ref.k === 'file' && ref.url);
+    const refs = photos.length ? photos : destinationImages(trip);
+    return [...new Set((refs.length ? refs : existing.length ? existing : [null]).map(imgSrc))];
+}
+
+function tripCoverSrc(trip) {
+    return tripImages(trip)[0];
+}
