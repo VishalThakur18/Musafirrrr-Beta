@@ -9,9 +9,50 @@ function Navbar() {
     const { user: me, ready: authReady } = useAuth();
     const [open, setOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [hidden, setHidden] = useState(false);
+    const headerRef = useRef(null);
     const route = useRoute();
-    useEffect(() => { const f = () => setScrolled(window.scrollY > 12); f(); window.addEventListener('scroll', f, { passive: true }); return () => window.removeEventListener('scroll', f); }, []);
-    useEffect(() => { setOpen(false); }, [route]);
+    useEffect(() => { setOpen(false); setHidden(false); }, [route]);
+    useEffect(() => {
+        const scrollPosition = () => Math.min(Math.max(0, window.scrollY), Math.max(0, document.documentElement.scrollHeight - window.innerHeight));
+        let previous = scrollPosition();
+        let direction = 0;
+        let distance = 0;
+        let frame = 0;
+        const update = () => {
+            frame = 0;
+            const y = scrollPosition();
+            const delta = y - previous;
+            previous = y;
+            setScrolled(y > 12);
+            // Mouse-click focus must not pin navigation after following a link.
+            const keyboardFocus = headerRef.current?.querySelector(':focus-visible');
+            if (open || y <= 24 || keyboardFocus) {
+                setHidden(false);
+                direction = 0;
+                distance = 0;
+                return;
+            }
+            if (Math.abs(delta) < 1) return;
+            const nextDirection = delta > 0 ? 1 : -1;
+            if (nextDirection !== direction) {
+                direction = nextDirection;
+                distance = 0;
+            }
+            distance += Math.abs(delta);
+            const threshold = direction > 0 ? 40 : 18;
+            if (distance >= threshold) {
+                if (direction < 0 || y > (headerRef.current?.offsetHeight || 72) + 24) {
+                    setHidden(direction > 0);
+                }
+                distance = 0;
+            }
+        };
+        const scroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+        setScrolled(previous > 12);
+        window.addEventListener('scroll', scroll, { passive: true });
+        return () => { window.removeEventListener('scroll', scroll); cancelAnimationFrame(frame); };
+    }, [open, route]);
     const savedCount = s.wishlist.length;
 
     const logout = async () => {
@@ -24,7 +65,7 @@ function Navbar() {
         }
     };
 
-    return (React.createElement("header", { className: cls('sticky z-50 bg-white/92 backdrop-blur-md transition-shadow duration-200', scrolled ? 'shadow-[0_1px_0_#E7E0D7,0_8px_24px_-20px_rgba(19,32,37,.4)]' : 'border-b border-line'), style: { top: 'env(safe-area-inset-top,0px)' } },
+    return (React.createElement("header", { ref: headerRef, onFocusCapture: event => { if (event.target.matches(':focus-visible')) setHidden(false); }, className: cls('site-navbar sticky z-50 bg-white/92 backdrop-blur-md border-b border-line', hidden && !open ? 'site-navbar--hidden' : '', scrolled ? 'shadow-[0_1px_0_#E7E0D7,0_8px_24px_-20px_rgba(19,32,37,.4)]' : ''), style: { top: 'env(safe-area-inset-top,0px)' } },
         React.createElement("div", { className: "max-w-shell mx-auto px-5 lg:px-8" },
             React.createElement("div", { className: "h-16 md:h-[72px] flex items-center gap-6" },
                 React.createElement(Logo, null),

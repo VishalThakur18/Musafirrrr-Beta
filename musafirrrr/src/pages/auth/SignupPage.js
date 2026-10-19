@@ -29,7 +29,7 @@ function SignupPage({ params }) {
                 React.createElement("p", { className: "text-[13.5px] text-slatey" }, "Can't find it? Check your spam folder."),
                 React.createElement(Link, { to: "/login", className: "font-semibold underline underline-offset-4 text-[14px]" }, "Back to log in")));
     if (!role)
-        return (React.createElement(AuthShell, { title: "Welcome to Musafirrrr", sub: "Two ways in. Pick the one that sounds like you." },
+        return (React.createElement(AuthShell, { roleIntro: true, title: "Welcome to Musafirrrr", sub: "Two ways in. Pick the one that sounds like you.", footer: React.createElement("p", { className: "text-[14px] text-slatey" }, "Already have an account? ", React.createElement(Link, { to: "/login", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Log in")) },
             React.createElement("div", { className: "mt-8 space-y-3.5" }, [['TRAVELLER', 'I\'m a traveller', 'Find group trips, save the ones you like and enquire directly.', 'compass'],
                 ['ORGANIZER', 'I\'m a travel community', 'List your upcoming trips and receive enquiries.', 'users']
             ].map(([v, t_, b, ic]) => (React.createElement("button", { key: v, onClick: () => setRole(v), className: "w-full text-left rounded-2xl border border-line p-5 flex items-start gap-4 hover:border-ink/40 hover:shadow-card transition-all duration-200" },
@@ -39,9 +39,7 @@ function SignupPage({ params }) {
                     React.createElement("span", { className: "block font-bold text-[16.5px] tracking-tight" }, t_),
                     React.createElement("span", { className: "block text-[14px] text-slatey mt-1 leading-relaxed" }, b)),
                 React.createElement(Icon, { name: "chev", size: 18, className: "text-muted mt-3" }))))),
-            React.createElement("p", { className: "mt-7 text-[14px] text-slatey" },
-                "Already have an account? ",
-                React.createElement(Link, { to: "/login", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Log in"))));
+            null));
     const validate = (d, fields) => {
         const e = {};
         fields.forEach(f => { if (!String(d[f] || '').trim())
@@ -99,7 +97,11 @@ function SignupPage({ params }) {
         setBusy(false);
         }
     };
-    return (React.createElement(AuthShell, { title: role === 'TRAVELLER' ? 'Create your traveller account' : 'Create your community profile', sub: role === 'TRAVELLER' ? 'Saved trips and enquiries, all in one place.' : 'This becomes your public page on Musafirrrr.' },
+    const signupFooter = React.createElement(React.Fragment, null,
+        React.createElement("p", { className: "text-[14px] text-slatey" }, "Already have an account? ",
+            React.createElement(Link, { to: "/login", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Log in")),
+        React.createElement("p", { className: "text-[12px] text-muted" }, role === 'TRAVELLER' ? "Any trips you saved on this device move into your account." : "Your community profile is just the beginning. Add your first trip next."));
+    return (React.createElement(AuthShell, { travellerIntro: role === 'TRAVELLER', communityIntro: role === 'ORGANIZER', footer: signupFooter, title: role === 'TRAVELLER' ? 'Create your traveller account' : 'Create your community profile', sub: role === 'TRAVELLER' ? 'Saved trips and enquiries, all in one place.' : 'This becomes your public page on Musafirrrr.' },
         React.createElement("button", { onClick: () => setRole(''), className: "mt-4 inline-flex items-center gap-1.5 text-[13.5px] text-slatey hover:text-ink" },
             React.createElement(Icon, { name: "chevL", size: 15 }),
             " Change account type"),
@@ -112,8 +114,7 @@ function SignupPage({ params }) {
                 React.createElement(Input, { value: t.phone, onChange: e => setT({ ...t, phone: e.target.value }), placeholder: "98765 43210", inputMode: "tel" })),
             React.createElement(Field, { label: "Password", error: err.password, hint: "At least 6 characters." },
                 React.createElement(Input, { type: "password", value: t.password, onChange: e => setT({ ...t, password: e.target.value }), placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" })),
-            React.createElement(Btn, { type: "submit", size: "lg", className: "w-full", loading: busy }, busy ? 'Creating account' : 'Create account'),
-            React.createElement("p", { className: "text-[12.5px] text-muted text-center" }, "Any trips you saved on this device move into your account."))) : (React.createElement("form", { onSubmit: submitOrg, className: "mt-6 space-y-4" },
+            React.createElement(Btn, { type: "submit", size: "lg", className: "w-full", loading: busy }, busy ? 'Creating account' : 'Create account'))) : (React.createElement("form", { onSubmit: submitOrg, className: "mt-6 space-y-4" },
             React.createElement(Field, { label: "Community or agency name", error: err.orgName },
                 React.createElement(Input, { value: o.orgName, onChange: e => setO({ ...o, orgName: e.target.value }), placeholder: "Wanderlust Co." })),
             React.createElement("div", { className: "grid sm:grid-cols-2 gap-4" },
@@ -135,7 +136,5 @@ function SignupPage({ params }) {
             React.createElement(Field, { label: "Short bio", hint: "Two lines on who you are and how you run trips." },
                 React.createElement(TextArea, { rows: 3, value: o.bio, onChange: e => setO({ ...o, bio: e.target.value }), placeholder: "We run small-group trips across the Himalayas\u2026" })),
             React.createElement(Btn, { type: "submit", variant: "earth", size: "lg", className: "w-full", loading: busy }, busy ? 'Creating profile' : 'Create community profile'))),
-        React.createElement("p", { className: "mt-6 text-[14px] text-slatey" },
-            "Already have an account? ",
-            React.createElement(Link, { to: "/login", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Log in"))));
+        null));
 }
