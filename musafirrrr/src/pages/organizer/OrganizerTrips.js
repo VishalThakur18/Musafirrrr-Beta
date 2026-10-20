@@ -13,7 +13,7 @@ function SpotsInput({ trip, onCommit }) {
         if (n !== trip.availableSpots)
             onCommit(n);
     };
-    return React.createElement("input", { type: "number", min: "0", max: trip.totalSpots, value: v,
+    return React.createElement("input", { type: "number", "aria-label": "Spots left for " + trip.title, min: "0", max: trip.totalSpots, value: v,
         onChange: e => setV(e.target.value), onBlur: commit,
         onKeyDown: e => { if (e.key === 'Enter')
             e.target.blur(); },
@@ -26,6 +26,7 @@ function OrganizerTrips() {
     const org = me ? me.organizer : null;
     const orgId = org ? org.id : null;
     const [tab, setTab] = useState('ALL');
+    const [search, setSearch] = useState('');
     const [del, setDel] = useState(null);
     const [working, setWorking] = useState(null);
 
@@ -47,7 +48,8 @@ function OrganizerTrips() {
 
     const all = data ? data[0] : [];
     const leads = data ? data[1] : [];
-    const list = tab === 'ALL' ? all : all.filter(t => t.status === tab);
+    const query = search.trim().toLowerCase();
+    const list = all.filter(t => (tab === 'ALL' || t.status === tab) && (!query || [t.title, t.destination].some(value => String(value || '').toLowerCase().includes(query))));
     const leadCount = id => leads.filter(e => e.tripId === id).length;
 
     /** Runs one action at a time, shows errors, reloads the list (unless the action returns false). */
@@ -92,12 +94,15 @@ function OrganizerTrips() {
         React.createElement("div", { className: "flex items-end justify-between gap-4 flex-wrap mb-6" },
             React.createElement(SectionHead, { title: "My trips", sub: "Publish, edit, duplicate or retire the trips on your page." }),
             React.createElement(Btn, { icon: "plus", onClick: () => go('/organizer/create'), className: "mb-6" }, "Create trip")),
+        React.createElement("div", { className: "org-search" },
+            React.createElement(Field, { label: "Find a trip" }, React.createElement(Input, { type: "search", value: search, onChange: e => setSearch(e.target.value), placeholder: "Search by trip name or destination" })),
+            React.createElement("p", { role: "status" }, list.length, " of ", all.length, " trips")),
         React.createElement("div", { className: "flex gap-2 flex-wrap mb-6" }, ['ALL', 'PUBLISHED', 'DRAFT', 'SOLD_OUT', 'COMPLETED'].map(st => (React.createElement(Chip, { key: st, active: tab === st, onClick: () => setTab(st) },
             st === 'ALL' ? 'All' : st === 'SOLD_OUT' ? 'Sold out' : st.charAt(0) + st.slice(1).toLowerCase(),
             React.createElement("span", { className: "ml-1 text-[12px] opacity-70" }, st === 'ALL' ? all.length : all.filter(t => t.status === st).length))))),
         list.length === 0
-            ? React.createElement(EmptyState, { icon: "compass", title: "No trips here", body: "Create a trip and it will show up in this list the moment you save it.", action: React.createElement(Btn, { onClick: () => go('/organizer/create') }, "Create trip") })
-            : React.createElement("div", { className: "space-y-3" }, list.map(t => (React.createElement("div", { key: t.id, className: "rounded-2xl border border-line p-4 flex flex-col sm:flex-row gap-4" },
+            ? React.createElement(EmptyState, { icon: "compass", title: all.length ? "No matching trips" : "No trips here", body: all.length ? "Try another search or status filter." : "Create a trip and it will show up in this list the moment you save it.", action: all.length ? React.createElement(Btn, { variant: "outline", onClick: () => { setSearch(''); setTab('ALL'); } }, "Clear filters") : React.createElement(Btn, { onClick: () => go('/organizer/create') }, "Create trip") })
+            : React.createElement("div", { className: "space-y-3" }, list.map(t => (React.createElement("div", { key: t.id, className: "org-trip-row rounded-2xl border border-line p-4 flex flex-col sm:flex-row gap-4" },
                 React.createElement("img", { src: tripCoverSrc(t), alt: "", className: "w-full sm:w-32 h-32 sm:h-24 rounded-xl object-cover" }),
                 React.createElement("div", { className: "flex-1 min-w-0" },
                     React.createElement("div", { className: "flex items-start gap-3 justify-between" },
@@ -106,7 +111,7 @@ function OrganizerTrips() {
                             React.createElement("div", { className: "text-[13px] text-muted mt-1" },
                                 t.destination, " \u00B7 ", dateRange(t.startDate, t.endDate), " \u00B7 ", dur(t), " \u00B7 ", INR(t.price))),
                         React.createElement(StatusTag, { status: t.status })),
-                    React.createElement("div", { className: "mt-3 flex items-center gap-4 text-[13px] text-slatey" },
+                    React.createElement("div", { className: "mt-3 flex flex-wrap items-center gap-4 text-[13px] text-slatey" },
                         React.createElement("span", { className: "inline-flex items-center gap-1.5" },
                             React.createElement(Icon, { name: "users", size: 14 }),
                             t.availableSpots, "/", t.totalSpots, " open"),
