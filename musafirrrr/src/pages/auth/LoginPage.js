@@ -45,7 +45,9 @@ function LoginPage({ params }) {
         }
     };
 
-    return (React.createElement(AuthShell, { title: "Welcome back", sub: "Log in to pick up where you left off." },
+    const footer = React.createElement("p", { className: "text-[14px] text-slatey" }, "New to Musafirrrr? ",
+        React.createElement(Link, { to: "/signup", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Create an account"));
+    return (React.createElement(AuthShell, { loginIntro: true, footer, title: "Welcome back", sub: "Log in to pick up where you left off." },
         React.createElement("form", { onSubmit: submit, className: "mt-8 space-y-4" },
             React.createElement(Field, { label: "Email" },
                 React.createElement(Input, { type: "email", value: email, onChange: e => setEmail(e.target.value), placeholder: "you@email.com", autoComplete: "username" })),
@@ -58,8 +60,5 @@ function LoginPage({ params }) {
                 React.createElement(Icon, { name: "info", size: 15 }),
                 err),
             needsConfirm && React.createElement("button", { type: "button", onClick: resend, className: "text-[13.5px] font-semibold underline underline-offset-4 hover:text-earth" }, "Resend confirmation email"),
-            React.createElement(Btn, { type: "submit", size: "lg", className: "w-full", loading: busy }, busy ? 'Signing in' : 'Continue')),
-        React.createElement("div", { className: "mt-4 flex justify-between text-[13.5px]" },
-            React.createElement("span", null),
-            React.createElement(Link, { to: "/signup", className: "font-semibold hover:text-earth" }, "Create an account"))));
+            React.createElement(Btn, { type: "submit", size: "lg", className: "w-full", loading: busy }, busy ? 'Signing in' : 'Continue'))));
 }
