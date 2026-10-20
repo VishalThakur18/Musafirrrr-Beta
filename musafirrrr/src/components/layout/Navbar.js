@@ -3,14 +3,71 @@
    LAYOUT — NAVBAR
    ============================================================ */
 
+/** Shared scroll behaviour. Passive events only schedule one update per frame. */
+function useNavbarScroll(menuOpen, route, headerRef) {
+    const [hidden, setHidden] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+    useEffect(() => {
+        const position = () => Math.max(0, Math.min(window.scrollY,
+            Math.max(0, document.documentElement.scrollHeight - window.innerHeight)));
+        let previous = position();
+        let direction = 0;
+        let travel = 0;
+        let frame = 0;
+        let keyboard = false;
+        setHidden(false);
+        setScrolled(previous > 12);
+        const update = () => {
+            frame = 0;
+            const y = position();
+            const delta = y - previous;
+            previous = y;
+            setScrolled(y > 12);
+            if (menuOpen || y <= 24 || (keyboard && headerRef.current?.contains(document.activeElement))) {
+                setHidden(false);
+                direction = 0;
+                travel = 0;
+                return;
+            }
+            if (Math.abs(delta) < 1) return;
+            const next = delta > 0 ? 1 : -1;
+            if (next !== direction) { direction = next; travel = 0; }
+            travel += Math.abs(delta);
+            if (travel >= (direction > 0 ? 32 : 14)) {
+                if (direction < 0 || y > (headerRef.current?.offsetHeight || 72) + 24) setHidden(direction > 0);
+                travel = 0;
+            }
+        };
+        const scroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+        const key = event => {
+            if (event.key === 'Tab') { keyboard = true; setHidden(false); }
+        };
+        const pointer = () => { keyboard = false; };
+        window.addEventListener('scroll', scroll, { passive: true });
+        window.addEventListener('keydown', key);
+        window.addEventListener('pointerdown', pointer, { passive: true });
+        window.addEventListener('wheel', pointer, { passive: true });
+        window.addEventListener('touchstart', pointer, { passive: true });
+        return () => {
+            cancelAnimationFrame(frame);
+            window.removeEventListener('scroll', scroll);
+            window.removeEventListener('keydown', key);
+            window.removeEventListener('pointerdown', pointer);
+            window.removeEventListener('wheel', pointer);
+            window.removeEventListener('touchstart', pointer);
+        };
+    }, [menuOpen, route]);
+    return { hidden, scrolled, reveal: () => setHidden(false) };
+}
+
 /** Top navigation bar. */
 function Navbar() {
     const s = useStore();
     const { user: me, ready: authReady } = useAuth();
     const [open, setOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
+    const headerRef = useRef(null);
     const route = useRoute();
-    useEffect(() => { const f = () => setScrolled(window.scrollY > 12); f(); window.addEventListener('scroll', f, { passive: true }); return () => window.removeEventListener('scroll', f); }, []);
+    const { hidden, scrolled, reveal } = useNavbarScroll(open, route, headerRef);
     useEffect(() => { setOpen(false); }, [route]);
     const savedCount = s.wishlist.length;
 
@@ -24,7 +81,7 @@ function Navbar() {
         }
     };
 
-    return (React.createElement("header", { className: cls('sticky z-50 bg-white/92 backdrop-blur-md transition-shadow duration-200', scrolled ? 'shadow-[0_1px_0_#E7E0D7,0_8px_24px_-20px_rgba(19,32,37,.4)]' : 'border-b border-line'), style: { top: 'env(safe-area-inset-top,0px)' } },
+    return (React.createElement("header", { ref: headerRef, onFocusCapture: reveal, className: cls('site-navbar sticky z-50 bg-white/92 backdrop-blur-md border-b border-line', hidden && !open ? 'site-navbar--hidden' : '', scrolled ? 'shadow-[0_1px_0_#E7E0D7,0_8px_24px_-20px_rgba(19,32,37,.4)]' : ''), style: { top: 'env(safe-area-inset-top,0px)' } },
         React.createElement("div", { className: "max-w-shell mx-auto px-5 lg:px-8" },
             React.createElement("div", { className: "h-16 md:h-[72px] flex items-center gap-6" },
                 React.createElement(Logo, null),

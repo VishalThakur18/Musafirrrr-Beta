@@ -9,6 +9,7 @@ function OrganizerLeads() {
     const org = me ? me.organizer : null;
     const orgId = org ? org.id : null;
     const [filter, setFilter] = useState('ALL');
+    const [search, setSearch] = useState('');
     const [saving, setSaving] = useState(false);
 
     // All hooks stay above the early returns below.
@@ -30,7 +31,8 @@ function OrganizerLeads() {
 
     const all = data ? data[0] : [];
     const tripsById = Object.fromEntries((data ? data[1] : []).map(t => [t.id, t]));
-    const list = filter === 'ALL' ? all : all.filter(e => e.status === filter);
+    const query = search.trim().toLowerCase();
+    const list = all.filter(e => (filter === 'ALL' || e.status === filter) && (!query || [e.name, e.email, e.phone, tripsById[e.tripId]?.title].some(value => String(value || '').toLowerCase().includes(query))));
 
     const changeStatus = async (id, st) => {
         if (saving)
@@ -53,13 +55,16 @@ function OrganizerLeads() {
 
     return (React.createElement(React.Fragment, null,
         React.createElement(SectionHead, { title: "Leads and enquiries", sub: "Every traveller who asked about one of your trips." }),
+        React.createElement("div", { className: "org-search" },
+            React.createElement(Field, { label: "Find an enquiry" }, React.createElement(Input, { type: "search", value: search, onChange: e => setSearch(e.target.value), placeholder: "Search traveller, trip, email or phone" })),
+            React.createElement("p", { role: "status" }, list.length, " of ", all.length, " enquiries")),
         React.createElement("div", { className: "flex gap-2 flex-wrap mb-6" }, ['ALL', 'NEW', 'CONTACTED', 'CONFIRMED', 'CANCELLED'].map(st => (React.createElement(Chip, { key: st, active: filter === st, onClick: () => setFilter(st) },
             st === 'ALL' ? 'All' : st.charAt(0) + st.slice(1).toLowerCase(),
             React.createElement("span", { className: "ml-1 text-[12px] opacity-70" }, st === 'ALL' ? all.length : all.filter(e => e.status === st).length))))),
         list.length === 0
-            ? React.createElement(EmptyState, { icon: "inbox", title: all.length === 0 ? "No enquiries yet" : "Nothing in this bucket", body: all.length === 0 ? "When a traveller enquires about one of your trips, it will appear here with their contact details." : "Enquiries you mark with this status will appear here." })
+            ? React.createElement(EmptyState, { icon: "inbox", title: all.length === 0 ? "No enquiries yet" : "No matching enquiries", body: all.length === 0 ? "When a traveller enquires about one of your trips, it will appear here with their contact details." : "Try another search or status filter.", action: all.length > 0 && React.createElement(Btn, { variant: "outline", onClick: () => { setSearch(''); setFilter('ALL'); } }, "Clear filters") })
             : React.createElement("div", { className: "rounded-2xl border border-line overflow-hidden" },
-                React.createElement("div", { className: "hidden md:grid grid-cols-[1.2fr_1.4fr_.8fr_.8fr_auto] gap-4 px-5 py-3 bg-sand text-[12px] font-bold tracking-[.08em] text-muted" },
+                React.createElement("div", { className: "org-lead-heading" },
                     React.createElement("span", null, "TRAVELLER"),
                     React.createElement("span", null, "TRIP"),
                     React.createElement("span", null, "RECEIVED"),
