@@ -82,10 +82,11 @@ function App() {
             React.createElement(TravellerProfile, null));
     else if (path.startsWith('/organizer')) {
         const inner = path === '/organizer/dashboard' ? React.createElement(OrganizerDashboard, null) :
-            path === '/organizer/trips' ? React.createElement(OrganizerTrips, null) :
+            path === '/organizer/trips' ? React.createElement(OrganizerTrips, { key: (params.trip || 'all') + ':' + (params.status || 'ALL'), selectedTripId: params.trip, initialStatus: params.status }) :
+            path === '/organizer/departures' ? React.createElement(OrganizerDepartures, null) :
                 path === '/organizer/create' ? React.createElement(TripWizard, null) :
                     parts[1] === 'edit' ? React.createElement(TripWizard, { tripId: parts[2] }) :
-                        path === '/organizer/leads' ? React.createElement(OrganizerLeads, null) :
+                        path === '/organizer/leads' ? React.createElement(OrganizerLeads, { key: params.status || 'ALL', initialStatus: params.status }) :
                             path === '/organizer/profile' ? React.createElement(OrganizerProfileEdit, null) :
                                 path === '/organizer/settings' ? React.createElement(OrganizerSettings, null) :
                                     React.createElement(OrganizerDashboard, null);

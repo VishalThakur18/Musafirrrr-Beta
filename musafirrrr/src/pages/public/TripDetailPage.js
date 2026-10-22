@@ -178,7 +178,7 @@ function EnquiryModal({ trip, org, open, onClose }) {
             ". They usually reply within a day \u2014 message them now to move faster."),
         React.createElement("div", { className: "mt-6 flex flex-col gap-3" },
             React.createElement(WhatsAppButton, { trip: trip, org: org, size: "lg" }),
-            React.createElement(InstagramButton, { org: org, size: "lg" }),
+            React.createElement(InstagramButton, { trip: trip, org: org, size: "lg" }),
             React.createElement(Btn, { variant: "ghost", onClick: () => { onClose(); go(isTraveller ? '/traveller/my-trips' : '/explore'); } }, isTraveller ? 'See my enquiries' : 'Keep exploring trips')))) : (React.createElement("form", { onSubmit: submit, className: "enquiry-form" },
         React.createElement("h2", { className: "enquiry-header text-[22px] font-extrabold tracking-tight" }, "Enquire about this trip"),
         React.createElement("div", { className: "enquiry-body" },
@@ -235,6 +235,7 @@ function TripDetailPage({ slug }) {
 
     // Real trip first; the mock store is only a fallback until Explore and Home are converted
     const trip = dbTrip || tripService.bySlug(slug);
+    useTripPageView(trip, slug);
     if (!trip) {
         if (loading)
             return React.createElement("main", { className: "max-w-shell mx-auto px-5 py-24" },
@@ -348,7 +349,7 @@ function TripDetailPage({ slug }) {
                                 React.createElement("div", { className: "mt-4 flex flex-wrap gap-2.5" },
                                     React.createElement(Btn, { size: "sm", variant: "outline", onClick: () => go('/o/' + org.slug) }, "See all their trips"),
                                     React.createElement(WhatsAppButton, { trip: trip, org: org, size: "sm", label: "WhatsApp" }),
-                                    React.createElement(InstagramButton, { org: org, size: "sm", label: "Instagram" })))))),
+                                    React.createElement(InstagramButton, { trip: trip, org: org, size: "sm", label: "Instagram" })))))),
                     others.length > 0 && org && (React.createElement("section", { className: "mt-12" },
                         React.createElement(SectionHead, { title: `More from ${org.name}` }),
                         React.createElement("div", { className: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3" }, others.map(t => React.createElement(TripCard, { key: t.id, trip: { ...t, organizer: org } })))))),
@@ -375,9 +376,9 @@ function TripDetailPage({ slug }) {
                             React.createElement("div", { className: "mt-4" },
                                 React.createElement(SpotsMeter, { trip: trip })),
                             React.createElement("div", { className: "mt-5 space-y-2.5" },
-                                React.createElement(Btn, { size: "lg", className: "w-full", disabled: !canEnquire, onClick: () => setEnq(true) }, ctaLabel),
+                                React.createElement(Btn, { size: "lg", className: "w-full", disabled: !canEnquire, onClick: () => { void tripAnalytics.track(trip, 'enquiry_open'); setEnq(true); } }, ctaLabel),
                                 React.createElement(WhatsAppButton, { trip: trip, org: org, className: "w-full" }),
-                                React.createElement(InstagramButton, { org: org, className: "w-full" })),
+                                React.createElement(InstagramButton, { trip: trip, org: org, className: "w-full" })),
                             React.createElement("p", { className: "mt-4 text-[12.5px] text-muted leading-relaxed text-center" }, "You pay the organizer directly. Musafirrrr charges travellers nothing.")))))),
         React.createElement("div", { className: "lg:hidden fixed left-0 right-0 z-[85] bg-white border-t border-line px-4 pt-3", style: hasTabs
                 ? { bottom: 'calc(57px + env(safe-area-inset-bottom,0px))', paddingBottom: '12px' }
@@ -386,7 +387,7 @@ function TripDetailPage({ slug }) {
                 React.createElement("div", { className: "shrink-0" },
                     React.createElement("div", { className: "text-[19px] font-extrabold tracking-tight leading-none" }, INR(trip.price)),
                     React.createElement("div", { className: "text-[11.5px] text-muted mt-0.5" }, "per person")),
-                React.createElement(Btn, { className: "flex-1", disabled: !canEnquire, onClick: () => setEnq(true) }, ctaLabel),
+                React.createElement(Btn, { className: "flex-1", disabled: !canEnquire, onClick: () => { void tripAnalytics.track(trip, 'enquiry_open'); setEnq(true); } }, ctaLabel),
                 org && org.whatsapp && (React.createElement("a", { href: waLink(org.whatsapp, tripWaMessage(trip, org)), target: "_blank", rel: "noopener noreferrer", "aria-label": "Chat on WhatsApp", className: "w-11 h-11 rounded-full bg-[#1F7A4C] text-white flex items-center justify-center shrink-0" },
                     React.createElement(Icon, { name: "wa", size: 20 }))))),
         org && React.createElement(EnquiryModal, { trip: trip, org: org, open: enq, onClose: () => setEnq(false) })));

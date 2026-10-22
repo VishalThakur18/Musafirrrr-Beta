@@ -25,7 +25,10 @@ src/
       public/               <- Home, Explore, TripDetail, Organizer, HowItWorks, ForCommunities
       auth/                 <- Login, Signup
       traveller/            <- Saved, Dashboard, MyTrips, Profile
-      organizer/            <- Dashboard, Leads, Trips, TripWizard, ProfileEdit, Settings
+  features/organizerDashboard/        <- organizer dashboard frontend
+      pages/                <- Dashboard, Leads, Trips, TripWizard, ProfileEdit, Settings
+      components/           <- OrganizerShell and future organizer-only components
+      styles/               <- organizerDashboard.css for new dashboard styles
   App.js                    <- route table + layout
   main.js                   <- starts the app (must load last)
 ```

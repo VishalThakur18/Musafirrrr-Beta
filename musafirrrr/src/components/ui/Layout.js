@@ -4,8 +4,8 @@
    ============================================================ */
 
 /** Dashboard stat tile. */
-function Stat({ label, value, sub, icon }) {
-    return (React.createElement("div", { className: "rounded-2xl border border-line bg-white p-5" },
+function Stat({ label, value, sub, icon, to }) {
+    return (React.createElement(to ? Link : 'div', { ...(to ? { to, 'aria-label': 'View ' + label.toLowerCase() } : {}), className: "rounded-2xl border border-line bg-white p-5" + (to ? ' od-stat-link' : '') },
         React.createElement("div", { className: "flex items-center justify-between" },
             React.createElement("span", { className: "text-[13px] font-semibold text-muted" }, label),
             icon && React.createElement("span", { className: "text-beige" },

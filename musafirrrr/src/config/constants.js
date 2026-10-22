@@ -25,7 +25,7 @@ const SORTS = [['recommended', 'Recommended'], ['price_asc', 'Price: low to high
 const DURATIONS = [['', 'Any length'], ['1-3', '1–3 days'], ['4-7', '4–7 days'], ['8+', '8+ days']];
 
 /** Organizer sidebar links. */
-const ORG_NAV = [['/organizer/dashboard', 'chart', 'Dashboard'], ['/organizer/trips', 'grid', 'My trips'], ['/organizer/create', 'plus', 'Create trip'],
+const ORG_NAV = [['/organizer/dashboard', 'chart', 'Dashboard'], ['/organizer/trips', 'grid', 'My trips'], ['/organizer/departures', 'cal', 'Departures'], ['/organizer/create', 'plus', 'Create trip'],
     ['/organizer/leads', 'inbox', 'Leads'], ['/organizer/profile', 'user', 'Profile'], ['/organizer/settings', 'gear', 'Settings']];
 
 /** Wizard step names. */
