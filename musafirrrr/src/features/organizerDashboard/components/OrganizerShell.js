@@ -89,7 +89,7 @@ function OrganizerShell({ children }) {
                             React.createElement("div", { className: "font-bold text-[15px] truncate" }, org.name),
                             React.createElement(Link, { to: '/o/' + org.slug, className: "text-[12.5px] text-muted hover:text-earth" }, "View public page"))),
                     React.createElement(NavItems, null),
-                    React.createElement("button", { onClick: logout, className: "mt-6 flex items-center gap-3 px-3.5 h-11 rounded-xl text-[14.5px] font-semibold text-slatey hover:bg-shell w-full" },
+                    React.createElement("button", { onClick: logout, className: "org-logout-action mt-6" },
                         React.createElement(Icon, { name: "logout", size: 18 }),
                         "Log out"))),
             React.createElement("main", { className: "org-content min-w-0", id: "organizer-content" }, children)),
@@ -103,5 +103,5 @@ function OrganizerShell({ children }) {
                 React.createElement(NavItems, { onClick: () => setDrawer(false) }),
                 React.createElement("div", { className: "h-px bg-line my-5" }),
                 React.createElement(Link, { to: '/o/' + org.slug, className: "block px-3.5 py-2.5 text-[14.5px] font-semibold text-slatey" }, "View public page"),
-                React.createElement("button", { onClick: logout, className: "block px-3.5 py-2.5 text-[14.5px] font-semibold text-bad" }, "Log out"))))));
+                React.createElement("button", { onClick: logout, className: "org-logout-action" }, React.createElement(Icon, { name: "logout", size: 18 }), "Log out"))))));
 }

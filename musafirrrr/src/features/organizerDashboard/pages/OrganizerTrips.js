@@ -21,11 +21,11 @@ function SpotsInput({ trip, onCommit }) {
 }
 
 /** Organizer's trip list. */
-function OrganizerTrips() {
+function OrganizerTrips({ selectedTripId, initialStatus } = {}) {
     const { user: me } = useAuth();
     const org = me ? me.organizer : null;
     const orgId = org ? org.id : null;
-    const [tab, setTab] = useState('ALL');
+    const [tab, setTab] = useState(['PUBLISHED', 'DRAFT', 'SOLD_OUT', 'COMPLETED'].includes(initialStatus) ? initialStatus : 'ALL');
     const [search, setSearch] = useState('');
     const [del, setDel] = useState(null);
     const [working, setWorking] = useState(null);
@@ -49,7 +49,7 @@ function OrganizerTrips() {
     const all = data ? data[0] : [];
     const leads = data ? data[1] : [];
     const query = search.trim().toLowerCase();
-    const list = all.filter(t => (tab === 'ALL' || t.status === tab) && (!query || [t.title, t.destination].some(value => String(value || '').toLowerCase().includes(query))));
+    const list = all.filter(t => (!selectedTripId || t.id === selectedTripId) && (tab === 'ALL' || t.status === tab) && (!query || [t.title, t.destination].some(value => String(value || '').toLowerCase().includes(query))));
     const leadCount = id => leads.filter(e => e.tripId === id).length;
 
     /** Runs one action at a time, shows errors, reloads the list (unless the action returns false). */
@@ -94,6 +94,9 @@ function OrganizerTrips() {
         React.createElement("div", { className: "flex items-end justify-between gap-4 flex-wrap mb-6" },
             React.createElement(SectionHead, { title: "My trips", sub: "Publish, edit, duplicate or retire the trips on your page." }),
             React.createElement(Btn, { icon: "plus", onClick: () => go('/organizer/create'), className: "mb-6" }, "Create trip")),
+        selectedTripId && React.createElement('div', { className: 'mb-5 flex items-center justify-between gap-3 flex-wrap', role: 'status' },
+            React.createElement('p', { className: 'text-sm text-slatey' }, all.some(t => t.id === selectedTripId) ? 'Showing the listing selected from Departures.' : 'This listing is no longer available in your trips.'),
+            React.createElement(Link, { to: '/organizer/trips', className: 'text-sm font-semibold underline underline-offset-4' }, 'Show all trips')),
         React.createElement("div", { className: "org-search" },
             React.createElement(Field, { label: "Find a trip" }, React.createElement(Input, { type: "search", value: search, onChange: e => setSearch(e.target.value), placeholder: "Search by trip name or destination" })),
             React.createElement("p", { role: "status" }, list.length, " of ", all.length, " trips")),

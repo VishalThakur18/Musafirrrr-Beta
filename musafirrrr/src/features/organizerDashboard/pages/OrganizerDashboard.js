@@ -31,8 +31,8 @@ function OrganizerDashboard() {
     const leads = data ? data[1] : [];
     const tripsById = Object.fromEntries(trips.map(t => [t.id, t]));
     const active = trips.filter(t => t.status === 'PUBLISHED');
-    const upcoming = active.filter(t => daysUntil(t.startDate) > 0);
-    const spots = active.reduce((a, t) => a + (t.availableSpots || 0), 0);
+    const upcoming = trips.filter(t => ['PUBLISHED', 'SOLD_OUT'].includes(t.status) && daysUntil(t.startDate) >= 0);
+    const spots = upcoming.reduce((a, t) => a + (t.availableSpots || 0), 0);
     const recent = [...leads].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
     const departures = trips.filter(t => ['PUBLISHED', 'SOLD_OUT'].includes(t.status) && daysUntil(t.startDate) >= 0).sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).slice(0, 3);
     const drafts = trips.filter(t => t.status === 'DRAFT');
@@ -49,21 +49,26 @@ function OrganizerDashboard() {
         }
     };
 
-    return (React.createElement(React.Fragment, null,
+    return (React.createElement('div', { className: 'od-overview' },
         React.createElement("div", { className: "org-overview-hero" },
             React.createElement("div", null,
+                React.createElement('span', { className: 'od-kicker' }, 'YOUR COMMUNITY AT A GLANCE'),
                 React.createElement("h1", { className: "text-[28px] sm:text-[34px] font-extrabold tracking-[-0.03em] leading-tight" },
                     "Hello, ", org.name),
                 React.createElement("p", { className: "text-[15px] text-slatey mt-1" },
-                    newCount, " new ", newCount === 1 ? 'enquiry' : 'enquiries', " waiting for a reply.",
-                    !org.verified && ' Manage your trips and community from here.')),
+                    'A little planning. More great journeys. Here is where your community stands.')),
             React.createElement(Btn, { icon: "plus", onClick: () => go('/organizer/create') }, "Create trip")),
         React.createElement("div", { className: "org-stat-grid" },
-            React.createElement(Stat, { label: "Published trips", value: active.length, sub: `${trips.filter(t => t.status === 'DRAFT').length} drafts`, icon: "grid" }),
-            React.createElement(Stat, { label: "Upcoming", value: upcoming.length, sub: upcoming.length ? `Next: ${fmtDate([...upcoming].sort((a, b) => d(a.startDate) - d(b.startDate))[0].startDate)}` : 'Nothing scheduled', icon: "cal" }),
-            React.createElement(Stat, { label: "Total leads", value: leads.length, sub: `${leads.filter(l => l.status === 'CONFIRMED').length} confirmed`, icon: "inbox" }),
-            React.createElement(Stat, { label: "Spots open", value: spots, sub: "Across published trips", icon: "users" })),
+            React.createElement(Stat, { to: "/organizer/trips?status=PUBLISHED", label: "Published trips", value: active.length, sub: `${trips.filter(t => t.status === 'DRAFT').length} drafts`, icon: "grid" }),
+            React.createElement(Stat, { to: "/organizer/leads?status=NEW", label: "New enquiries", value: newCount, sub: `${leads.length} ${leads.length === 1 ? 'enquiry' : 'enquiries'} in total`, icon: "inbox" }),
+            React.createElement(Stat, { to: "/organizer/leads?status=CONFIRMED", label: "Confirmed enquiries", value: leads.filter(l => l.status === 'CONFIRMED').length, sub: 'Organizer-reported status', icon: "check" }),
+            React.createElement(Stat, { to: "/organizer/departures", label: "Upcoming departures", value: upcoming.length, sub: "Published and sold-out trips", icon: "compass" })),
+        React.createElement('div', { className: 'od-summary' },
+            React.createElement('span', null, React.createElement('strong', null, upcoming.length), ' upcoming departures'),
+            React.createElement('span', null, React.createElement('strong', null, spots), ' spots open on upcoming trips'),
+            React.createElement(Link, { to: '/organizer/departures' }, 'Manage departures', ' \u2192')),
         React.createElement(OrganizerOverviewActions, { newCount, drafts, departures, leads, org }),
+        React.createElement(OrganizerTripPerformance, { organizerId: orgId }),
         React.createElement("section", { className: "org-panel" },
             React.createElement("div", { className: "org-panel__heading" },
                 React.createElement("h2", { className: "text-xl font-extrabold tracking-tight" }, "Recent enquiries"),
@@ -111,13 +116,15 @@ function LeadRow({ e, compact, trip, orgName, onStatus }) {
             React.createElement("div", { className: "flex gap-2 justify-start md:justify-end" },
                 React.createElement("a", { href: waLink(e.phone, `Hi ${e.name.split(' ')[0]}, this is ${oName} — about your enquiry for ${t ? t.title : 'our trip'} on Musafirrrr.`), target: "_blank", rel: "noopener noreferrer", "aria-label": "WhatsApp traveller", className: "w-9 h-9 rounded-full bg-[#1F7A4C] text-white flex items-center justify-center hover:opacity-90" },
                     React.createElement(Icon, { name: "wa", size: 17 })),
-                React.createElement("button", { onClick: () => setOpen(o => !o), "aria-expanded": open, "aria-label": (open ? "Hide" : "Show") + " enquiry details for " + e.name, className: "w-9 h-9 rounded-full border border-line flex items-center justify-center hover:bg-sand" },
-                    React.createElement(Icon, { name: open ? 'chevD' : 'chev', size: 16 })))),
+                React.createElement("button", { type: 'button', onClick: () => setOpen(o => !o), "aria-expanded": open, "aria-label": (open ? "Close status editor for " : "Change status for ") + e.name, className: "od-lead-status-action" },
+                    React.createElement(Icon, { name: open ? 'x' : 'edit', size: 15 }), open ? 'Close' : 'Change status'))),
         open && (React.createElement("div", { className: "px-4 md:px-5 pb-5 fade-in" },
             React.createElement("div", { className: "rounded-xl bg-sand border border-line p-4" },
                 React.createElement("p", { className: "text-[14.5px] text-slatey leading-relaxed" }, e.message || 'No message left.'),
                 React.createElement("div", { className: "mt-3 text-[13px] text-muted" }, e.email),
-                React.createElement("div", { className: "mt-4 flex flex-wrap gap-2" }, ['NEW', 'CONTACTED', 'CONFIRMED', 'CANCELLED'].map(st => (React.createElement(Chip, { key: st, active: e.status === st, onClick: () => pick(st) }, st.charAt(0) + st.slice(1).toLowerCase())))))))));
+                React.createElement('p', { className: 'mt-4 text-sm font-semibold' }, 'Update enquiry status'),
+                React.createElement('p', { className: 'mt-1 text-xs text-muted' }, 'Choose a status below to save it. Confirmed is organizer-reported, not a verified booking.'),
+                React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" }, ['NEW', 'CONTACTED', 'CONFIRMED', 'CANCELLED'].map(st => (React.createElement(Chip, { key: st, active: e.status === st, onClick: () => pick(st) }, st.charAt(0) + st.slice(1).toLowerCase())))))))));
 }
 
 /** Read-only summaries and shortcuts derived from the dashboard's existing data. */
@@ -125,18 +132,19 @@ function OrganizerOverviewActions({ newCount, drafts, departures, leads, org }) 
     const h = React.createElement;
     return h('div', { className: 'org-overview-grid' },
         h('section', { className: 'org-panel' },
-            h('div', { className: 'org-panel__heading' }, h('h2', null, 'Your next steps'), h('span', { className: 'org-eyebrow' }, 'STAY ON TRACK')),
+            h('div', { className: 'org-panel__heading' }, h('h2', null, 'Needs your attention'), h('span', { className: 'org-eyebrow' }, 'NEXT STEPS')),
             h(Link, { to: '/organizer/leads', className: 'org-action-row' },
                 h('span', { className: 'org-action-icon' }, h(Icon, { name: 'inbox', size: 20 })),
-                h('span', null, h('strong', null, newCount ? `${newCount} enquiries need a reply` : 'You are all caught up'), h('small', null, newCount ? 'Open your inbox and connect with travellers.' : 'Review conversations and keep lead statuses up to date.')), h(Icon, { name: 'arrow', size: 17 })),
+                h('span', null, h('strong', null, newCount ? `${newCount} new enquiries to review` : 'No new enquiries waiting'), h('small', null, newCount ? 'Open your inbox and connect with travellers.' : 'Visit Leads to review your existing conversations.')), h(Icon, { name: 'arrow', size: 17 })),
             h(Link, { to: drafts.length ? '/organizer/edit/' + drafts[0].id : '/organizer/create', className: 'org-action-row' },
                 h('span', { className: 'org-action-icon' }, h(Icon, { name: 'edit', size: 20 })),
                 h('span', null, h('strong', null, drafts.length ? `${drafts.length} drafts ready to work on` : 'Plan your next departure'), h('small', null, drafts.length ? 'Pick up where you left off on a draft.' : 'Bring a new adventure to your community.')), h(Icon, { name: 'arrow', size: 17 })),
             h(Link, { to: org.verified ? '/organizer/profile' : '/organizer/settings', className: 'org-action-row' },
                 h('span', { className: 'org-action-icon' }, h(Icon, { name: org.verified ? 'user' : 'shield', size: 20 })),
-                h('span', null, h('strong', null, org.verified ? 'Keep your community profile fresh' : 'Review community verification'), h('small', null, org.verified ? 'Update your story, photos and contact details.' : 'See requirements and your verification status.')), h(Icon, { name: 'arrow', size: 17 }))),
+                h('span', null, h('strong', null, org.verified ? 'Keep your community profile fresh' : 'Review community verification'), h('small', null, org.verified ? 'Update your story, photos and contact details.' : 'See requirements and your verification status.')), h(Icon, { name: 'arrow', size: 17 })),
+            h('p', { className: 'od-availability-note' }, 'Follow-up reminders will appear here once follow-up tracking is connected.')),
         h('section', { className: 'org-panel' },
-            h('div', { className: 'org-panel__heading' }, h('h2', null, 'Next departures'), h(Link, { to: '/organizer/trips' }, 'All trips')),
+            h('div', { className: 'org-panel__heading' }, h('h2', null, 'Next departures'), h(Link, { to: '/organizer/departures' }, 'Manage dates')),
             departures.length ? departures.map(t => h(Link, { key: t.id, to: '/organizer/edit/' + t.id, className: 'org-departure' },
                 h('div', { className: 'org-departure__date' }, h(Icon, { name: 'cal', size: 17 }), h('strong', null, fmtDate(t.startDate))),
                 h('div', null, h('strong', null, t.title), h('small', null, t.destination + ' \u00b7 ' + (daysUntil(t.startDate) === 0 ? 'Leaves today' : `In ${daysUntil(t.startDate)} days`)), h('small', null, `${t.availableSpots || 0} of ${t.totalSpots || 0} spots open`)),
