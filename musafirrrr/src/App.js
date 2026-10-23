@@ -92,7 +92,7 @@ function App() {
                                 path === '/organizer/settings' ? React.createElement(OrganizerSettings, null) :
                                     React.createElement(OrganizerDashboard, null);
         page = React.createElement(Guard, { role: "ORGANIZER" },
-            React.createElement(OrganizerShell, null, inner));
+            React.createElement(OrganizerShell, { key: me?.organizer?.id || 'no-organizer' }, inner));
     }
     else
         page = (React.createElement("main", { className: "max-w-shell mx-auto px-5 py-24" },

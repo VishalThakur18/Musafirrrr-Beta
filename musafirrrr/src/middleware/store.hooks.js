@@ -53,7 +53,7 @@ window.sbClient.auth.onAuthStateChange((event, session) => {
 });
 
 /** React hook: runs an async loader and returns { loading, error, data, reload }. */
-function useAsync(fn, deps) {
+function useAsync(fn, deps, { keepPreviousData = false } = {}) {
     const [state, setState] = useState({ loading: true, error: null, data: null });
     const [tick, setTick] = useState(0);
     useEffect(() => {
@@ -61,7 +61,7 @@ function useAsync(fn, deps) {
         setState(s => ({ ...s, loading: true, error: null }));
         fn().then(
             data => { if (active) setState({ loading: false, error: null, data }); },
-            error => { console.error(error); if (active) setState({ loading: false, error, data: null }); }
+            error => { console.error(error); if (active) setState(previous => ({ loading: false, error, data: keepPreviousData ? previous.data : null })); }
         );
         return () => { active = false; };
     }, [...deps, tick]);

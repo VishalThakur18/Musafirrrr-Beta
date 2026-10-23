@@ -66,7 +66,9 @@ function dbToEnquiry(r) {
         travellerCount: r.num_travellers || 1,
         message: r.message || "",
         status: String(r.status).toUpperCase(),   // new -> NEW
+        // Preserve time so new enquiries on the same day sort newest first.
         createdAt: isoDate(r.created_at),
+        createdAtTimestamp: r.created_at || "",
     };
 }
 

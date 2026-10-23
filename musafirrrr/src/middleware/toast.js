@@ -4,10 +4,15 @@
    ============================================================ */
 
 let toastId = 0;
+let toastTimer = null;
 
 /** Shows a temporary notification message. */
 function toast(msg, kind = 'ok') {
     const id = ++toastId;
-    store.quiet(s => { s.toasts = [...s.toasts, { id, msg, kind }]; });
-    setTimeout(() => store.quiet(s => { s.toasts = s.toasts.filter(t => t.id !== id); }), 3200);
+    if (toastTimer !== null) clearTimeout(toastTimer);
+    store.quiet(s => { s.toasts = [{ id, msg, kind }]; });
+    toastTimer = setTimeout(() => {
+        store.quiet(s => { s.toasts = s.toasts.filter(t => t.id !== id); });
+        if (id === toastId) toastTimer = null;
+    }, 3200);
 }

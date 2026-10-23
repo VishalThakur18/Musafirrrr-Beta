@@ -22,8 +22,9 @@ function OrganizerLeads({ initialStatus } = {}) {
         () => orgId
             ? Promise.all([organizerApi.enquiries(orgId), organizerApi.trips(orgId)])
             : Promise.resolve([[], []]),
-        [orgId]
+        [orgId], { keepPreviousData: true }
     );
+    useOrganizerLiveRefresh(orgId, reload, loading);
 
     if (!org)
         return React.createElement(EmptyState, { icon: "user", title: "Your community profile is missing", body: "We couldn't find your organizer profile. Please contact support." });
@@ -43,7 +44,7 @@ function OrganizerLeads({ initialStatus } = {}) {
         const due = drafts[e.id]?.due;
         const matchesFollowUp = followUp === 'ALL' || (followUp === 'NONE' ? !due : due && (followUp === 'OVERDUE' ? due < localDay : followUp === 'TODAY' ? due === localDay : due > localDay));
         return (filter === 'ALL' || e.status === filter) && (tripFilter === 'ALL' || e.tripId === tripFilter) && matchesFollowUp && (!query || [e.name, e.email, e.phone, tripsById[e.tripId]?.title].some(value => String(value || '').toLowerCase().includes(query)));
-    }).sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) : (new Date(a.createdAt) - new Date(b.createdAt)) * (sort === 'oldest' ? 1 : -1));
+    }).sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) : (new Date(a.createdAtTimestamp || a.createdAt) - new Date(b.createdAtTimestamp || b.createdAt)) * (sort === 'oldest' ? 1 : -1));
     const clearFilters = () => { setSearch(''); setFilter('ALL'); setTripFilter('ALL'); setFollowUp('ALL'); setSort('newest'); };
 
     const changeStatus = async (id, st) => {
