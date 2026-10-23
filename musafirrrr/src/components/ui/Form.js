@@ -29,6 +29,6 @@ function Select({ children, ...p }) {
 function TextArea(props) { return React.createElement("textarea", { ...props, className: cls(inputCls, 'h-auto py-3 leading-relaxed resize-y', props.className) }); }
 
 /** Selectable pill. */
-function Chip({ active, children, onClick, className }) {
-    return (React.createElement("button", { type: "button", onClick: onClick, className: cls('whitespace-nowrap rounded-full px-4 h-9 text-[13.5px] font-medium border transition-all duration-200', active ? 'bg-ink text-white border-ink' : 'bg-white text-slatey border-line hover:border-ink/35', className) }, children));
+function Chip({ active, children, onClick, className, disabled = false }) {
+    return (React.createElement("button", { type: "button", onClick: onClick, disabled, className: cls('whitespace-nowrap rounded-full px-4 h-9 text-[13.5px] font-medium border transition-all duration-200 disabled:cursor-not-allowed', active ? 'bg-ink text-white border-ink' : 'bg-white text-slatey border-line hover:border-ink/35', className) }, children));
 }

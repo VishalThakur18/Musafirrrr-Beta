@@ -12,8 +12,9 @@ function OrganizerDashboard() {
         () => orgId
             ? Promise.all([organizerApi.trips(orgId), organizerApi.enquiries(orgId)])
             : Promise.resolve([[], []]),
-        [orgId]
+        [orgId], { keepPreviousData: true }
     );
+    useOrganizerLiveRefresh(orgId, reload, loading);
 
     if (!org) {
         return React.createElement(EmptyState, { icon: "user", title: "Your community profile is missing", body: "We couldn't find your organizer profile. Please contact support." });
@@ -33,7 +34,7 @@ function OrganizerDashboard() {
     const active = trips.filter(t => t.status === 'PUBLISHED');
     const upcoming = trips.filter(t => ['PUBLISHED', 'SOLD_OUT'].includes(t.status) && daysUntil(t.startDate) >= 0);
     const spots = upcoming.reduce((a, t) => a + (t.availableSpots || 0), 0);
-    const recent = [...leads].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
+    const recent = [...leads].sort((a, b) => new Date(b.createdAtTimestamp || b.createdAt) - new Date(a.createdAtTimestamp || a.createdAt)).slice(0, 5);
     const departures = trips.filter(t => ['PUBLISHED', 'SOLD_OUT'].includes(t.status) && daysUntil(t.startDate) >= 0).sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).slice(0, 3);
     const drafts = trips.filter(t => t.status === 'DRAFT');
     const newCount = leads.filter(l => l.status === 'NEW').length;
@@ -99,11 +100,23 @@ function LeadRow({ e, compact, trip, orgName, onStatus }) {
     const t = trip !== undefined ? trip : tripService.byId(e.tripId);
     const oName = orgName !== undefined ? orgName : ((organizerService.byId(e.organizerId) || {}).name || '');
     const [open, setOpen] = useState(false);
-    const pick = (st) => {
-        if (onStatus) onStatus(e.id, st);
-        else { enquiryService.setStatus(e.id, st); toast('Marked as ' + st.toLowerCase()); }
+    const [proposed, setProposed] = useState(null);
+    const [savingStatus, setSavingStatus] = useState(false);
+    const savingRef = useRef(false);
+    const pick = async (st) => {
+        if (!st || st === e.status || savingRef.current) return;
+        savingRef.current = true;
+        setSavingStatus(true);
+        try {
+            if (onStatus) await onStatus(e.id, st);
+            else { enquiryService.setStatus(e.id, st); toast('Marked as ' + st.toLowerCase()); }
+        } finally { savingRef.current = false; setSavingStatus(false); }
     };
     return (React.createElement("div", { className: "org-lead border-t border-line first:border-t-0" },
+        React.createElement(Confirm, { open: !!proposed, title: 'Change enquiry status?',
+            body: `Are you sure you want to change ${e.name}'s enquiry${t ? ' for ' + t.title : ''} from ${e.status.toLowerCase()} to ${(proposed || '').toLowerCase()}? This change will be saved to your records. Confirmed is organizer-reported, not a verified booking.`,
+            confirmLabel: 'Yes, change status', cancelLabel: 'Cancel', tone: proposed === 'CANCELLED' ? 'danger' : 'primary',
+            onConfirm: () => pick(proposed), onClose: () => setProposed(null) }),
         React.createElement("div", { className: "org-lead-grid" },
             React.createElement("div", { className: "min-w-0" },
                 React.createElement("div", { className: "font-bold text-[15px] tracking-tight" }, e.name),
@@ -123,8 +136,8 @@ function LeadRow({ e, compact, trip, orgName, onStatus }) {
                 React.createElement("p", { className: "text-[14.5px] text-slatey leading-relaxed" }, e.message || 'No message left.'),
                 React.createElement("div", { className: "mt-3 text-[13px] text-muted" }, e.email),
                 React.createElement('p', { className: 'mt-4 text-sm font-semibold' }, 'Update enquiry status'),
-                React.createElement('p', { className: 'mt-1 text-xs text-muted' }, 'Choose a status below to save it. Confirmed is organizer-reported, not a verified booking.'),
-                React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" }, ['NEW', 'CONTACTED', 'CONFIRMED', 'CANCELLED'].map(st => (React.createElement(Chip, { key: st, active: e.status === st, onClick: () => pick(st) }, st.charAt(0) + st.slice(1).toLowerCase())))))))));
+                React.createElement('p', { className: 'mt-1 text-xs text-muted', role: savingStatus ? 'status' : undefined }, savingStatus ? 'Saving status…' : 'Choose a status, then confirm before saving. Confirmed is organizer-reported, not a verified booking.'),
+                React.createElement("div", { className: "mt-3 flex flex-wrap gap-2", 'aria-busy': savingStatus }, ['NEW', 'CONTACTED', 'CONFIRMED', 'CANCELLED'].map(st => (React.createElement(Chip, { key: st, active: e.status === st, disabled: savingStatus || e.status === st, onClick: () => { if (!savingRef.current && st !== e.status) setProposed(st); } }, st.charAt(0) + st.slice(1).toLowerCase())))))))));
 }
 
 /** Read-only summaries and shortcuts derived from the dashboard's existing data. */

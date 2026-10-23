@@ -38,15 +38,12 @@ function OrganizerShell({ children }) {
     }, [drawer]);
 
     // All hooks stay above the early return below.
-    const { data: leadCount, reload: reloadLeadCount } = useAsync(
+    const { data: leadCount, reload: reloadLeadCount, loading: leadCountLoading } = useAsync(
         () => orgId ? organizerApi.newLeadCount(orgId) : Promise.resolve(0),
-        [orgId]
+        [orgId], { keepPreviousData: true }
     );
-    useEffect(() => {
-        const f = () => reloadLeadCount();
-        window.addEventListener('leads-changed', f);
-        return () => window.removeEventListener('leads-changed', f);
-    }, [orgId]);
+    useOrganizerLiveRefresh(orgId, reloadLeadCount, leadCountLoading);
+    useEffect(() => startOrganizerLiveUpdates(orgId), [orgId]);
     const newLeads = leadCount || 0;
 
     const logout = async () => {

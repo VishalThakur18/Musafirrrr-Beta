@@ -38,12 +38,28 @@ function Modal({ open, onClose, children, size = 'md', label, responsive = false
 }
 
 /** Confirmation dialog. */
-function Confirm({ open, title, body, confirmLabel = 'Delete', onConfirm, onClose, tone = 'danger' }) {
+function Confirm({ open, title, body, confirmLabel = 'Delete', cancelLabel = 'Keep it', onConfirm, onClose, tone = 'danger' }) {
+    const contentRef = useRef(null);
+    useEffect(() => {
+        if (!open) return;
+        const previous = document.activeElement;
+        const dialog = contentRef.current.closest('[role="dialog"]');
+        contentRef.current.querySelector('button')?.focus();
+        const trap = event => {
+            if (event.key !== 'Tab') return;
+            const buttons = [...dialog.querySelectorAll('button:not(:disabled)')];
+            const first = buttons[0], last = buttons[buttons.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        };
+        dialog.addEventListener('keydown', trap);
+        return () => { dialog.removeEventListener('keydown', trap); if (previous?.isConnected) previous.focus(); };
+    }, [open]);
     return (React.createElement(Modal, { open: open, onClose: onClose, size: "sm", label: title },
-        React.createElement("div", { className: "p-6 sm:p-7" },
-            React.createElement("h3", { className: "text-xl font-bold tracking-tight" }, title),
+        React.createElement("div", { ref: contentRef, className: "p-6 sm:p-7" },
+            React.createElement("h3", { className: "text-xl font-bold tracking-tight pr-8" }, title),
             React.createElement("p", { className: "mt-2 text-[15px] text-slatey leading-relaxed" }, body),
             React.createElement("div", { className: "mt-6 flex gap-3 justify-end" },
-                React.createElement(Btn, { variant: "outline", onClick: onClose }, "Keep it"),
+                React.createElement(Btn, { variant: "outline", onClick: onClose }, cancelLabel),
                 React.createElement(Btn, { variant: tone, onClick: () => { onConfirm(); onClose(); } }, confirmLabel)))));
 }
