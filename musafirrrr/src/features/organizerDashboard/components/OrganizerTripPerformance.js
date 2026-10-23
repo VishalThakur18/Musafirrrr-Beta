@@ -15,11 +15,11 @@ function OrganizerTripPerformance({ organizerId }) {
         return max ? rows.filter(row => row[key] === max).map(row => row.title).join(', ') + ` (${max})` : 'No activity yet';
     };
     return h('section', { className: 'org-panel od-performance', 'aria-label': 'Trip performance analytics' },
-        h('div', { className: 'org-panel__heading' }, h('h2', null, 'Trip performance analytics'),
+        h('div', { className: 'od-analytics-heading' }, h('div', null, h('h2', null, 'Trip performance analytics'), h('p', null, 'See how travellers discover and engage with your trips.')),
             h('label', { className: 'od-analytics-filter' }, h('span', null, 'Period'), h('select', { value: days, onChange: e => setDays(Number(e.target.value)) },
                 [7, 30, 90].map(value => h('option', { key: value, value }, `Last ${value} days`))))),
-        loading && h('p', { role: 'status' }, 'Loading performance...'),
-        error && h('div', { role: 'alert' }, h('p', null, 'Analytics is unavailable. Check your connection and ensure the analytics database migration is installed.'), h(Btn, { onClick: reload }, 'Try again')),
+        loading && h('div', { className: 'od-analytics-state', role: 'status' }, h('span', { className: 'od-analytics-state-icon', 'aria-hidden': true }, h(Icon, { name: 'chart', size: 22 })), h('div', { className: 'od-analytics-state-copy' }, h('strong', null, 'Loading trip performance'), h('p', null, 'Gathering activity for your selected period…'))),
+        error && h('div', { className: 'od-analytics-state', role: 'alert' }, h('span', { className: 'od-analytics-state-icon', 'aria-hidden': true }, h(Icon, { name: 'info', size: 22 })), h('div', { className: 'od-analytics-state-copy' }, h('strong', null, 'Analytics is currently unavailable'), h('p', null, 'We couldn’t load your trip activity. Please try again in a moment.')), h(Btn, { variant: 'outline', onClick: reload }, 'Try again')),
         report && h(React.Fragment, null,
             h('div', { className: 'org-stat-grid' },
                 h(Stat, { label: 'Trip page views', value: total('views'), sub: `Last ${days} days`, icon: 'compass' }),

@@ -26,7 +26,7 @@ const DURATIONS = [['', 'Any length'], ['1-3', '1–3 days'], ['4-7', '4–7 day
 
 /** Organizer sidebar links. */
 const ORG_NAV = [['/organizer/dashboard', 'chart', 'Dashboard'], ['/organizer/trips', 'grid', 'My trips'], ['/organizer/departures', 'cal', 'Departures'], ['/organizer/create', 'plus', 'Create trip'],
-    ['/organizer/leads', 'inbox', 'Leads'], ['/organizer/profile', 'user', 'Profile'], ['/organizer/settings', 'gear', 'Settings']];
+    ['/organizer/leads', 'inbox', 'Leads'], ['/organizer/finance', 'wallet', 'Revenue & Finance'], ['/organizer/profile', 'user', 'Profile'], ['/organizer/settings', 'gear', 'Settings']];
 
 /** Wizard step names. */
 const WIZARD = ['Basics', 'Dates', 'Pricing', 'Photos', 'Itinerary', 'Included', 'Not included', 'Contact', 'Preview'];
