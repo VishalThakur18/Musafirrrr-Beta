@@ -20,16 +20,33 @@ function useStore() {
  */
 async function refreshAuth(user) {
     const previousUserId = authState.user && authState.user.id;
+
     try {
         authState.user = user !== undefined ? user : await authService.current();
     } catch (err) {
         console.error("Auth refresh failed:", err);
         authState.user = null;
     }
-    if (previousUserId !== (authState.user && authState.user.id)) dataService.invalidate(false);
+
+    const currentUserId = authState.user && authState.user.id;
+
+    if (previousUserId !== currentUserId) {
+        dataService.invalidate(false);
+    }
+
     authState.ready = true;
     authState.subs.forEach(f => f());
+
+    if (typeof wishlistService !== "undefined") {
+        try {
+            await wishlistService.load();
+        } catch (err) {
+            console.error("Wishlist load failed:", err);
+        }
+    }
 }
+
+
 window.refreshAuth = refreshAuth;
 
 /** React hook: { user, ready } */

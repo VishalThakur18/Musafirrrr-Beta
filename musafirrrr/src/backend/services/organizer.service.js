@@ -215,6 +215,41 @@ const organizerApi = {
         if (!data || data.length === 0) throw new Error("You can't update this enquiry.");
     },
 
+
+        /* ---------- enquiry notes & follow-up ---------- */
+
+    async getEnquiryNotes(organizerId) {
+        const { data, error } = await window.sbClient
+            .from("organizer_enquiry_notes")
+            .select("enquiry_id, organizer_id, notes, follow_up_date, last_contacted_at, updated_at")
+            .eq("organizer_id", organizerId);
+
+        if (error) throw error;
+
+        return data || [];
+    },
+
+    async saveEnquiryNotes(organizerId, enquiryId, payload) {
+        const { data, error } = await window.sbClient
+            .from("organizer_enquiry_notes")
+            .upsert({
+                organizer_id: organizerId,
+                enquiry_id: enquiryId,
+                notes: String(payload.notes || "").slice(0, 2000),
+                follow_up_date: payload.follow_up_date || null,
+                last_contacted_at: payload.last_contacted_at || null,
+                updated_at: new Date().toISOString()
+            }, {
+                onConflict: "enquiry_id"
+            })
+            .select("enquiry_id, organizer_id, notes, follow_up_date, last_contacted_at, updated_at")
+            .single();
+
+        if (error) throw error;
+
+        return data;
+    },
+
     /* ---------- photos ---------- */
 
     async uploadTripImage(file, userId) {
@@ -290,6 +325,128 @@ const organizerApi = {
         if (!data || data.length === 0) throw new Error("You can't delete this trip.");
         dataService.invalidate();
     },
+
+
+    
+    /**
+     * Saves a departure using the existing trips table and save_trip RPC.
+     * A new departure becomes a separate draft trip listing.
+     */
+    
+    async saveDeparture(tripId, organizerId, values) {
+        const startDate = String(values.start || "").trim();
+        const endDate = String(values.end || "").trim();
+        const total = Number(values.total);
+        const sold = Number(values.sold);
+
+        if (!tripId || !organizerId) {
+            throw new Error("Select a valid trip listing.");
+        }
+
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
+            !/^\d{4}-\d{2}-\d{2}$/.test(endDate) ||
+            endDate < startDate
+        ) {
+            throw new Error("Choose valid departure and return dates.");
+        }
+
+        if (
+            !Number.isInteger(total) ||
+            total < 1 ||
+            total > 10000 ||
+            !Number.isInteger(sold) ||
+            sold < 0 ||
+            sold > total
+        ) {
+            throw new Error("Enter valid total and sold seat counts.");
+        }
+
+        const isNew = !values.id;
+        const sourceTripId = isNew ? tripId : values.id;
+
+        const source = await organizerApi.tripForEdit(
+            sourceTripId,
+            organizerId
+        );
+
+        if (!source) {
+            throw new Error("The selected trip could not be found.");
+        }
+
+        const start = new Date(`${startDate}T00:00:00Z`);
+        const end = new Date(`${endDate}T00:00:00Z`);
+
+        const durationDays =
+            Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+
+        const durationNights = Math.max(0, durationDays - 1);
+
+        const sourceStatus = String(source.status || "DRAFT").toUpperCase();
+
+        if (!isNew && sourceStatus === "CANCELLED") {
+            throw new Error("Cancelled trips cannot be edited here.");
+        }
+
+        const payload = {
+            title: isNew
+                ? `${source.title} - ${startDate}`
+                : source.title,
+            destination: source.destination,
+            region: source.region || "",
+            starting_location: source.startingLocation,
+            category: source.category,
+            group_type: source.groupType,
+            description: source.description || "",
+            start_date: startDate,
+            end_date: endDate,
+            duration_days: durationDays,
+            duration_nights: durationNights,
+            price: source.price,
+            currency: source.currency || "INR",
+            advance_amount: source.advanceAmount,
+            total_spots: total,
+            spots_left: total - sold,
+            meeting_point: source.meetingPoint,
+            status: isNew
+                ? "draft"
+                : sourceStatus === "DRAFT"
+                    ? "draft"
+                    : "published",
+            cover_image_url:
+                source.images?.[0] ||
+                source.coverImage?.url ||
+                null,
+            images: source.images || [],
+            itinerary: (source.itinerary || []).map(day => ({
+                title: day.title || "",
+                description: day.detail || ""
+            })),
+            included: source.included || [],
+            excluded: source.excluded || []
+        };
+
+        const result = await organizerApi.saveTrip(
+            isNew ? null : values.id,
+            payload
+        );
+
+        dataService.invalidate();
+
+        const savedId = typeof result === "string"
+            ? result
+            : result?.id;
+
+        if (!savedId) {
+            throw new Error(
+                "The save operation returned no trip ID. Check the save_trip RPC response."
+            );
+        }
+
+        return savedId;
+    },
+
+
 
     /** Copies a trip (photos, itinerary, inclusions) as a new draft. Returns the new trip id. */
     async duplicateTrip(tripId, organizerId) {
@@ -468,6 +625,112 @@ const organizerApi = {
             if (error.code === "23514") throw new Error("Please write between 30 and 1500 characters.");
             throw new Error(error.message);
         }
+    },
+
+        // ---------- departures: enquiry pause ----------
+
+    async getTripEnquiryPause(tripId) {
+        const { data, error } = await window.sbClient
+            .from("trips")
+            .select("id, enquiries_paused")
+            .eq("id", tripId)
+            .single();
+
+        if (error) throw error;
+
+        return Boolean(data.enquiries_paused);
+    },
+
+    async setTripEnquiryPause(tripId, paused) {
+        const { data, error } = await window.sbClient
+            .from("trips")
+            .update({
+                enquiries_paused: Boolean(paused)
+            })
+            .eq("id", tripId)
+            .select("id, enquiries_paused")
+            .single();
+
+        if (error) throw error;
+
+        if (!data) {
+            throw new Error("Could not update enquiry settings.");
+        }
+
+        dataService.invalidate();
+
+        return data.enquiries_paused;
+    },
+
+    // ---------- departures: preparation checklist ----------
+
+    async getDepartureChecklist(tripId) {
+        const { data, error } = await window.sbClient
+            .from("trip_preparation_checklist")
+            .select(
+                "id, trip_id, item, is_completed, position, created_at"
+            )
+            .eq("trip_id", tripId)
+            .order("position", { ascending: true })
+            .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        return data || [];
+    },
+
+    async addDepartureChecklistItem(tripId, item) {
+        const text = String(item || "").trim();
+
+        if (!text) {
+            throw new Error("Enter a checklist item.");
+        }
+
+        if (text.length > 300) {
+            throw new Error(
+                "Checklist items must be 300 characters or fewer."
+            );
+        }
+
+        const { data, error } = await window.sbClient
+            .from("trip_preparation_checklist")
+            .insert({
+                trip_id: tripId,
+                item: text
+            })
+            .select(
+                "id, trip_id, item, is_completed, position, created_at"
+            )
+            .single();
+
+        if (error) throw error;
+
+        return data;
+    },
+
+    async setDepartureChecklistItem(itemId, completed) {
+        const { data, error } = await window.sbClient
+            .from("trip_preparation_checklist")
+            .update({
+                is_completed: Boolean(completed),
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", itemId)
+            .select("id, is_completed")
+            .single();
+
+        if (error) throw error;
+
+        return data;
+    },
+
+    async deleteDepartureChecklistItem(itemId) {
+        const { error } = await window.sbClient
+            .from("trip_preparation_checklist")
+            .delete()
+            .eq("id", itemId);
+
+        if (error) throw error;
     },
 };
 
