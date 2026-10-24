@@ -6,8 +6,8 @@
 /** Saved trips (#/saved). */
 function SavedPage() {
     const s = useStore();
+    const { user: me, ready } = useAuth();
     const trips = wishlistService.trips();
-    const me = authService.current();
     return (React.createElement("main", { className: "max-w-shell mx-auto px-5 lg:px-8 py-10 md:py-14 pb-28 md:pb-14" },
         React.createElement(SectionHead, { title: "Saved trips", sub: trips.length ? `${trips.length} ${trips.length === 1 ? 'trip' : 'trips'} you're keeping an eye on.` : '' }),
         !me && trips.length > 0 && (React.createElement("div", { className: "mb-7 rounded-2xl bg-sand border border-line p-4 flex flex-col sm:flex-row sm:items-center gap-3" },
