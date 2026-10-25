@@ -46,7 +46,7 @@ function OrganizerPage({ slug }) {
 
     return (React.createElement("main", null,
         React.createElement("div", { className: "relative h-44 md:h-64 overflow-hidden bg-shell" },
-            React.createElement("img", { src: org.banner_url || sceneURL(org.logoKind || 'mountains', (org.logoSeed || 11) + 500), alt: "", className: "w-full h-full object-cover" }),
+            React.createElement("img", { ...responsivePhoto(org.banner_url || sceneURL(org.logoKind || 'mountains', (org.logoSeed || 11) + 500), 1600, '100vw'), onError: e => originalPhotoOnError(e, org.banner_url || sceneURL(org.logoKind || 'mountains', (org.logoSeed || 11) + 500)), fetchPriority: 'high', decoding: 'async', alt: "", className: "w-full h-full object-cover" }),
             React.createElement("div", { className: cls('absolute inset-0', org.banner_url ? 'bg-ink/10' : 'bg-ink/35') })),
         React.createElement("div", { className: "max-w-shell mx-auto px-5 lg:px-8" },
             React.createElement("div", { className: "-mt-14 md:-mt-16 relative flex flex-col md:flex-row md:items-start gap-5" },

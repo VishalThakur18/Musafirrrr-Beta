@@ -1,0 +1,260 @@
+﻿[
+    {
+        "File":  "andaman.jpg",
+        "Width":  480,
+        "OriginalBytes":  381415,
+        "OptimizedBytes":  80470
+    },
+    {
+        "File":  "andaman.jpg",
+        "Width":  960,
+        "OriginalBytes":  381415,
+        "OptimizedBytes":  276758
+    },
+    {
+        "File":  "andaman.jpg",
+        "Width":  1600,
+        "OriginalBytes":  381415,
+        "OptimizedBytes":  366818
+    },
+    {
+        "File":  "assam.jpg",
+        "Width":  480,
+        "OriginalBytes":  332102,
+        "OptimizedBytes":  79403
+    },
+    {
+        "File":  "assam.jpg",
+        "Width":  960,
+        "OriginalBytes":  332102,
+        "OptimizedBytes":  318545
+    },
+    {
+        "File":  "assam.jpg",
+        "Width":  1600,
+        "OriginalBytes":  332102,
+        "OptimizedBytes":  318545
+    },
+    {
+        "File":  "coorg.jpg",
+        "Width":  480,
+        "OriginalBytes":  404543,
+        "OptimizedBytes":  85512
+    },
+    {
+        "File":  "coorg.jpg",
+        "Width":  960,
+        "OriginalBytes":  404543,
+        "OptimizedBytes":  289570
+    },
+    {
+        "File":  "coorg.jpg",
+        "Width":  1600,
+        "OriginalBytes":  404543,
+        "OptimizedBytes":  386637
+    },
+    {
+        "File":  "jaisalmer.jpg",
+        "Width":  480,
+        "OriginalBytes":  50220,
+        "OptimizedBytes":  9883
+    },
+    {
+        "File":  "jaisalmer.jpg",
+        "Width":  960,
+        "OriginalBytes":  50220,
+        "OptimizedBytes":  26224
+    },
+    {
+        "File":  "jaisalmer.jpg",
+        "Width":  1600,
+        "OriginalBytes":  50220,
+        "OptimizedBytes":  48114
+    },
+    {
+        "File":  "kashmir.jpg",
+        "Width":  480,
+        "OriginalBytes":  271725,
+        "OptimizedBytes":  95757
+    },
+    {
+        "File":  "kashmir.jpg",
+        "Width":  960,
+        "OriginalBytes":  271725,
+        "OptimizedBytes":  260357
+    },
+    {
+        "File":  "kashmir.jpg",
+        "Width":  1600,
+        "OriginalBytes":  271725,
+        "OptimizedBytes":  260357
+    },
+    {
+        "File":  "kerala.jpg",
+        "Width":  480,
+        "OriginalBytes":  250211,
+        "OptimizedBytes":  30799
+    },
+    {
+        "File":  "kerala.jpg",
+        "Width":  960,
+        "OriginalBytes":  250211,
+        "OptimizedBytes":  109777
+    },
+    {
+        "File":  "kerala.jpg",
+        "Width":  1600,
+        "OriginalBytes":  250211,
+        "OptimizedBytes":  239384
+    },
+    {
+        "File":  "meghalaya.jpg",
+        "Width":  480,
+        "OriginalBytes":  456522,
+        "OptimizedBytes":  50417
+    },
+    {
+        "File":  "meghalaya.jpg",
+        "Width":  960,
+        "OriginalBytes":  456522,
+        "OptimizedBytes":  193386
+    },
+    {
+        "File":  "meghalaya.jpg",
+        "Width":  1600,
+        "OriginalBytes":  456522,
+        "OptimizedBytes":  436728
+    },
+    {
+        "File":  "rishikesh.jpg",
+        "Width":  480,
+        "OriginalBytes":  402780,
+        "OptimizedBytes":  101601
+    },
+    {
+        "File":  "rishikesh.jpg",
+        "Width":  960,
+        "OriginalBytes":  402780,
+        "OptimizedBytes":  385740
+    },
+    {
+        "File":  "rishikesh.jpg",
+        "Width":  1600,
+        "OriginalBytes":  402780,
+        "OptimizedBytes":  385740
+    },
+    {
+        "File":  "spiti.jpg",
+        "Width":  480,
+        "OriginalBytes":  210920,
+        "OptimizedBytes":  55046
+    },
+    {
+        "File":  "spiti.jpg",
+        "Width":  960,
+        "OriginalBytes":  210920,
+        "OptimizedBytes":  203288
+    },
+    {
+        "File":  "spiti.jpg",
+        "Width":  1600,
+        "OriginalBytes":  210920,
+        "OptimizedBytes":  203288
+    },
+    {
+        "File":  "adventure.jpg",
+        "Width":  480,
+        "OriginalBytes":  2034882,
+        "OptimizedBytes":  20952
+    },
+    {
+        "File":  "adventure.jpg",
+        "Width":  960,
+        "OriginalBytes":  2034882,
+        "OptimizedBytes":  76650
+    },
+    {
+        "File":  "all-girls.jpg",
+        "Width":  480,
+        "OriginalBytes":  300013,
+        "OptimizedBytes":  60018
+    },
+    {
+        "File":  "all-girls.jpg",
+        "Width":  960,
+        "OriginalBytes":  300013,
+        "OptimizedBytes":  159240
+    },
+    {
+        "File":  "backpacking.jpg",
+        "Width":  480,
+        "OriginalBytes":  244693,
+        "OptimizedBytes":  24928
+    },
+    {
+        "File":  "backpacking.jpg",
+        "Width":  960,
+        "OriginalBytes":  244693,
+        "OptimizedBytes":  88698
+    },
+    {
+        "File":  "beach.jpg",
+        "Width":  480,
+        "OriginalBytes":  193648,
+        "OptimizedBytes":  47100
+    },
+    {
+        "File":  "beach.jpg",
+        "Width":  960,
+        "OriginalBytes":  193648,
+        "OptimizedBytes":  116623
+    },
+    {
+        "File":  "international.jpg",
+        "Width":  480,
+        "OriginalBytes":  183247,
+        "OptimizedBytes":  51546
+    },
+    {
+        "File":  "international.jpg",
+        "Width":  960,
+        "OriginalBytes":  183247,
+        "OptimizedBytes":  109660
+    },
+    {
+        "File":  "solo.jpg",
+        "Width":  480,
+        "OriginalBytes":  293810,
+        "OptimizedBytes":  77804
+    },
+    {
+        "File":  "solo.jpg",
+        "Width":  960,
+        "OriginalBytes":  293810,
+        "OptimizedBytes":  176581
+    },
+    {
+        "File":  "trekking.jpg",
+        "Width":  480,
+        "OriginalBytes":  284835,
+        "OptimizedBytes":  43963
+    },
+    {
+        "File":  "trekking.jpg",
+        "Width":  960,
+        "OriginalBytes":  284835,
+        "OptimizedBytes":  149603
+    },
+    {
+        "File":  "weekend.jpg",
+        "Width":  480,
+        "OriginalBytes":  1925345,
+        "OptimizedBytes":  50404
+    },
+    {
+        "File":  "weekend.jpg",
+        "Width":  960,
+        "OriginalBytes":  1925345,
+        "OptimizedBytes":  180974
+    }
+]

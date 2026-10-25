@@ -120,7 +120,7 @@ function ExplorePage({ params }) {
                 React.createElement("div", { className: "sticky", style: { top: 'calc(96px + env(safe-area-inset-top,0px))' } },
                     React.createElement(FilterPanel, { f: f, set: set, onClear: clear, count: results.length }))),
             React.createElement("div", null,
-                React.createElement(TripGrid, { trips: results, loading: loading || s.tripsLoading, empty: React.createElement(EmptyState, { title: "Nothing matches yet", body: "No trips fit those filters. Widen the dates, raise the budget, or clear the filters to see everything.", action: React.createElement(Btn, { onClick: clear }, "Clear filters") }) }))),
+                React.createElement(TripGrid, { trips: results, priority: true, loading: loading || s.tripsLoading, empty: React.createElement(EmptyState, { title: "Nothing matches yet", body: "No trips fit those filters. Widen the dates, raise the budget, or clear the filters to see everything.", action: React.createElement(Btn, { onClick: clear }, "Clear filters") }) }))),
         sheet && ReactDOM.createPortal(React.createElement("div", { id: "trip-filters", role: "dialog", "aria-modal": "true", "aria-label": "Trip filters", className: "filter-dialog" },
             React.createElement("div", { className: "absolute inset-0 bg-ink/45 fade-in", onClick: () => setSheet(false) }),
             React.createElement("div", { className: "filter-dialog__panel sheet-up" },

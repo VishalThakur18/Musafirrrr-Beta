@@ -7,7 +7,7 @@
 function OrgLogo({ org, size = 40 }) {
     const url = org && (org.logo_url || org.logoUrl);
     if (url)
-        return React.createElement("img", { src: url, alt: org.name || '', className: "rounded-full object-cover shrink-0", style: { width: size, height: size } });
+        return React.createElement("img", { ...responsivePhoto(url, Math.min(256, size * 2), `${size}px`), onError: e => originalPhotoOnError(e, url), width: size, height: size, decoding: 'async', alt: org.name || '', className: "rounded-full object-cover shrink-0", style: { width: size, height: size } });
     return React.createElement(Avatar, { kind: (org && org.logoKind) || 'mountains', seed: (org && org.logoSeed) || 11, size: size, name: org ? org.name : '' });
 }
 
@@ -170,7 +170,7 @@ function OrganizerProfileForm({ me, org }) {
         React.createElement("form", { onSubmit: save, className: "max-w-2xl space-y-5" },
             React.createElement("div", { className: "rounded-2xl border border-line overflow-hidden" },
                 React.createElement("div", { className: "relative h-28 sm:h-36 bg-shell" },
-                    React.createElement("img", { src: org.banner_url || sceneURL('mountains', 511), alt: "", className: "w-full h-full object-cover" }),
+                    React.createElement("img", { ...responsivePhoto(org.banner_url || sceneURL('mountains', 511), 960, '(max-width: 1023px) 90vw, 900px'), onError: e => originalPhotoOnError(e, org.banner_url || sceneURL('mountains', 511)), decoding: 'async', alt: "", className: "w-full h-full object-cover" }),
                     !org.banner_url && React.createElement("div", { className: "absolute inset-0 bg-ink/35" })),
                 React.createElement("div", { className: "p-4 flex items-center gap-4 flex-wrap" },
                     React.createElement("button", { type: "button", disabled: bannerBusy, onClick: () => bannerRef.current && bannerRef.current.click(), className: "text-[13.5px] font-semibold underline underline-offset-4 hover:text-earth disabled:opacity-50" }, bannerBusy ? 'Working...' : (org.banner_url ? 'Change banner' : 'Upload banner')),

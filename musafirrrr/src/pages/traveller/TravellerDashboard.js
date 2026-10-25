@@ -340,7 +340,8 @@ function EnquiryRowTraveller({ e, t }) {
         },
 
         React.createElement("img", {
-            src: tripCoverSrc(t),
+            ...responsivePhoto(tripCoverSrc(t), 160, '80px'),
+            onError: e => originalPhotoOnError(e, tripCoverSrc(t)), loading: 'lazy', decoding: 'async',
             alt: "",
             className: "w-20 h-20 rounded-xl object-cover shrink-0"
         }),

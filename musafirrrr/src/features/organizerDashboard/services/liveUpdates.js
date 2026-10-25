@@ -29,6 +29,8 @@ function startOrganizerLiveUpdates(organizerId, { client = window.sbClient, targ
     target.addEventListener('focus', notify);
     target.addEventListener('online', notify);
     target.addEventListener('leads-changed', notify);
+    const analyticsRecorded = event => { if (event.detail?.organizerId === organizerId) notify(); };
+    target.addEventListener('trip-analytics-recorded', analyticsRecorded);
     doc.addEventListener('visibilitychange', notify);
     return () => {
         disposed = true;
@@ -37,6 +39,7 @@ function startOrganizerLiveUpdates(organizerId, { client = window.sbClient, targ
         target.removeEventListener('focus', notify);
         target.removeEventListener('online', notify);
         target.removeEventListener('leads-changed', notify);
+        target.removeEventListener('trip-analytics-recorded', analyticsRecorded);
         doc.removeEventListener('visibilitychange', notify);
         if (channel) {
             try { Promise.resolve(client.removeChannel(channel)).catch(() => {}); } catch (error) { /* already disconnected */ }

@@ -75,7 +75,7 @@ function Gallery({ images, title }) {
                 onScroll: e => { const node = e.currentTarget; setI(Math.round(node.scrollLeft / node.clientWidth)); },
                 onKeyDown: e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); move(Math.max(0, Math.min(list.length - 1, (animation.current ? target.current : i) + (e.key === 'ArrowRight' ? 1 : -1)))); } }
             }, list.map((im, k) => React.createElement("button", { key: k, type: "button", className: "trip-gallery__slide", onClick: () => { cancelSlide(); setPhoto(k); setLightbox(true); }, "aria-label": `Open photo ${k + 1} of ${list.length}`, tabIndex: i === k ? 0 : -1 },
-                React.createElement("img", { src: imgSrc(im), alt: `${title} - photo ${k + 1}`, loading: k === 0 ? "eager" : "lazy", decoding: "async", fetchPriority: k === 0 ? "high" : "auto" })))),
+                React.createElement("img", { ...responsivePhoto(imgSrc(im), 1600, '(max-width: 1023px) calc(100vw - 40px), 900px'), onError: e => originalPhotoOnError(e, imgSrc(im)), alt: `${title} - photo ${k + 1}`, loading: Math.abs(i - k) <= 1 ? "eager" : "lazy", decoding: "async", fetchPriority: i === k ? "high" : "auto" })))),
             list.length > 1 && React.createElement("div", { className: "trip-gallery__controls trip-gallery__controls--overlay" },
                 React.createElement("button", { type: "button", onClick: () => move((animation.current ? target.current : i) - 1), disabled: i === 0, "aria-label": "Previous photo" }, React.createElement(Icon, { name: "chev", size: 22, className: "rotate-180" })),
                 React.createElement("span", { "aria-live": "polite" }, `${i + 1} / ${list.length}`),
@@ -103,8 +103,8 @@ function GalleryPhoto({ src, active, load, alt }) {
     const [requested, setRequested] = useState(load);
     useEffect(() => { if (load) setRequested(true); }, [load]);
     return React.createElement("div", { className: cls('trip-gallery__frame', active && 'is-active'), "aria-hidden": !active },
-        requested && React.createElement("img", { src, alt, decoding: "async", className: ready ? 'is-ready' : '',
-            onLoad: async e => { const image = e.currentTarget; try { await image.decode(); } catch (_) {} setReady(true); },
+        requested && React.createElement("img", { src, alt, decoding: "async", fetchPriority: active ? 'high' : 'low', className: ready ? 'is-ready' : '',
+            onLoad: () => setReady(true),
             onError: () => setFailed(true) }),
         !ready && React.createElement("span", { className: "trip-gallery__loading", role: active ? "status" : undefined }, failed ? "This photo could not load." : "Loading photo..."));
 }
@@ -112,6 +112,7 @@ function GalleryPhoto({ src, active, load, alt }) {
 /** Enquiry form shown on the trip page. */
 function EnquiryModal({ trip, org, open, onClose }) {
     const { user: me } = useAuth();
+    useTripEnquiryOpen(trip, open);
     const [form, setForm] = useState({ name: '', email: '', phone: '', travellerCount: 1, message: '' });
     const [err, setErr] = useState({});
     const [busy, setBusy] = useState(false);
@@ -183,7 +184,7 @@ function EnquiryModal({ trip, org, open, onClose }) {
         React.createElement("h2", { className: "enquiry-header text-[22px] font-extrabold tracking-tight" }, "Enquire about this trip"),
         React.createElement("div", { className: "enquiry-body" },
         React.createElement("div", { className: "mt-4 rounded-2xl bg-sand border border-line p-4 flex gap-3.5" },
-            React.createElement("img", { src: tripCoverSrc(trip), alt: "", className: "w-16 h-16 rounded-xl object-cover" }),
+            React.createElement("img", { ...responsivePhoto(tripCoverSrc(trip), 128, '64px'), onError: e => originalPhotoOnError(e, tripCoverSrc(trip)), decoding: 'async', alt: "", className: "w-16 h-16 rounded-xl object-cover" }),
             React.createElement("div", { className: "min-w-0" },
                 React.createElement("div", { className: "font-bold text-[15px] truncate" }, trip.title),
                 React.createElement("div", { className: "text-[13px] text-muted mt-0.5" },
@@ -376,7 +377,7 @@ function TripDetailPage({ slug }) {
                             React.createElement("div", { className: "mt-4" },
                                 React.createElement(SpotsMeter, { trip: trip })),
                             React.createElement("div", { className: "mt-5 space-y-2.5" },
-                                React.createElement(Btn, { size: "lg", className: "w-full", disabled: !canEnquire, onClick: () => { void tripAnalytics.track(trip, 'enquiry_open'); setEnq(true); } }, ctaLabel),
+                                React.createElement(Btn, { size: "lg", className: "w-full", disabled: !canEnquire, onClick: () => setEnq(true) }, ctaLabel),
                                 React.createElement(WhatsAppButton, { trip: trip, org: org, className: "w-full" }),
                                 React.createElement(InstagramButton, { trip: trip, org: org, className: "w-full" })),
                             React.createElement("p", { className: "mt-4 text-[12.5px] text-muted leading-relaxed text-center" }, "You pay the organizer directly. Musafirrrr charges travellers nothing.")))))),
@@ -387,8 +388,8 @@ function TripDetailPage({ slug }) {
                 React.createElement("div", { className: "shrink-0" },
                     React.createElement("div", { className: "text-[19px] font-extrabold tracking-tight leading-none" }, INR(trip.price)),
                     React.createElement("div", { className: "text-[11.5px] text-muted mt-0.5" }, "per person")),
-                React.createElement(Btn, { className: "flex-1", disabled: !canEnquire, onClick: () => { void tripAnalytics.track(trip, 'enquiry_open'); setEnq(true); } }, ctaLabel),
-                org && org.whatsapp && (React.createElement("a", { href: waLink(org.whatsapp, tripWaMessage(trip, org)), target: "_blank", rel: "noopener noreferrer", "aria-label": "Chat on WhatsApp", className: "w-11 h-11 rounded-full bg-[#1F7A4C] text-white flex items-center justify-center shrink-0" },
+                React.createElement(Btn, { className: "flex-1", disabled: !canEnquire, onClick: () => setEnq(true) }, ctaLabel),
+                org && org.whatsapp && (React.createElement("a", { href: waLink(org.whatsapp, tripWaMessage(trip, org)), target: "_blank", rel: "noopener noreferrer", onClick: () => { void tripAnalytics.track(trip, 'whatsapp_click'); }, "aria-label": "Chat on WhatsApp", className: "w-11 h-11 rounded-full bg-[#1F7A4C] text-white flex items-center justify-center shrink-0" },
                     React.createElement(Icon, { name: "wa", size: 20 }))))),
         org && React.createElement(EnquiryModal, { trip: trip, org: org, open: enq, onClose: () => setEnq(false) })));
 }

@@ -6,7 +6,7 @@
    ============================================================ */
 
 /* Path is relative to index.html (NOT to this file). */
-const LOGO_URL = 'src/assets/Logo.png';
+const LOGO_URL = 'assets/images/optimized/logo.png';
 
 /** Brand logo (image). `tone="light"` is used on dark backgrounds (footer). */
 function Logo({ className, tone = 'ink' }) {
@@ -23,6 +23,7 @@ function Logo({ className, tone = 'ink' }) {
             },
             React.createElement("img", {
                 src: LOGO_URL,
+                width: 40, height: 40, decoding: 'async',
                 alt: "Musafirrrr",
                 className: cls(
                     'h-10 w-10 md:h-10 md:w-10 aspect-square rounded-full object-cover',
