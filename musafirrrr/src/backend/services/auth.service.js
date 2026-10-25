@@ -167,6 +167,18 @@ async function ensureRoleRecords(user) {
   }
 }
 
+async function finishGoogleLogin(user) {
+  const sb = window.sbClient;
+  if (!(user.identities || []).some(i => i.provider === "google")) return false;   // email logins skip this
+  try { sessionStorage.removeItem("oauthRole"); } catch (e) {}
+  if (!(user.user_metadata || {}).role) {
+    await sb.auth.updateUser({ data: { role: "traveller" } });   // Google is traveller-only here
+    user = (await sb.auth.getUser()).data.user;
+  }
+  await ensureRoleRecords(user);
+  return true;
+}
+
 /** Where the confirmation link sends the user back to. */
 function emailRedirectUrl() {
   // No hash here: Supabase appends ?code=... and we handle it in init().
@@ -252,6 +264,21 @@ const authService = {
     const user = await window.getCurrentUser();
     await window.refreshAuth(user);
     return user;
+  },
+
+  async loginWithGoogle(nextPath) {
+    try {
+      sessionStorage.setItem("oauthRole", "traveller");
+      if (nextPath) sessionStorage.setItem("postLoginPath", nextPath);
+    } catch (e) {}
+    const { error } = await window.sbClient.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin + window.location.pathname,
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    if (error) throw new Error(error.message);
   },
 
   async signupOrganizer(d) {
