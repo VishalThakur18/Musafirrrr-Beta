@@ -12,6 +12,8 @@
     --bg:beige;
     --font-heading:"Caveat",cursive;
     --font-body: "Merriweather", serif;
+    --star: #F5B301;
+    --star-empty: #D9D4CA;
   }
   :root:not([data-theme="light"]){ color-scheme: light; }
   html{ scroll-padding-top: env(safe-area-inset-top, 0px); scroll-behavior:smooth; }
@@ -31,6 +33,10 @@
   :focus-visible{ outline:2px solid #33464A; outline-offset:2px; border-radius:4px; }
   @media (prefers-reduced-motion: reduce){ *{ animation-duration:.01ms !important; transition-duration:.01ms !important; } html{scroll-behavior:auto} }
   .no-scroll{ overflow:hidden; }
+
+
+.text-star{ color:var(--star); }
+.text-star-empty{ color:var(--star-empty); }
 
 /* Reusable image-led trip cards. All text sits on an opaque, contrast-safe tone. */
 .trip-card-grid { row-gap: 28px; grid-auto-rows: 1fr; }
@@ -55,6 +61,8 @@
 .trip-card__spots span { color: #e2e7e7; font-size: 12px; }
 .trip-card__cta { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; background: #fff; color: #132025; border-radius: 25px; font-size: 13px; font-weight: 700; }
 .trip-card__link:focus-visible { outline: 3px solid #fff; outline-offset: -5px; border-radius: 30px; }
+.trip-card__organizer .text-ink{ color:#fff; }
+.trip-card__organizer .text-muted{ color:#e2e7e7; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .trip-card { transition: transform .2s ease, box-shadow .2s ease; }
   .trip-card:hover { transform: translateY(-3px); box-shadow: 0 18px 32px -18px #13202580; }

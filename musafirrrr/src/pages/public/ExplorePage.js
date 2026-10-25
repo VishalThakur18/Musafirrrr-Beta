@@ -35,7 +35,7 @@ function filterTrips(trips, f) {
     const cmp = {
         price_asc: (a, b) => a.price - b.price, price_desc: (a, b) => b.price - a.price,
         soonest: (a, b) => d(a.startDate) - d(b.startDate), newest: (a, b) => d(b.createdAt) - d(a.createdAt),
-        recommended: (a, b) => (b.rating * 10 + (b.availableSpots > 0 ? 1 : -5)) - (a.rating * 10 + (a.availableSpots > 0 ? 1 : -5))
+        recommended: (a, b) => (orgRating(b) * 10 + (b.availableSpots > 0 ? 1 : -5)) - (orgRating(a) * 10 + (a.availableSpots > 0 ? 1 : -5))
     }[sort];
     return [...out].sort(cmp);
 }

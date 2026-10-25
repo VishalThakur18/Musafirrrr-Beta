@@ -171,7 +171,9 @@ function TripCard({ trip, priority = false }) {
                                 size: 13,
                                 className: "text-ok shrink-0"
                             }
-                        )
+                        ),
+
+                        React.createElement(OrgRating, { org })
                 ),
 
                 React.createElement(
