@@ -508,7 +508,7 @@ const organizerApi = {
     async uploadLogo(file, userId) {
         if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error("Use a JPG, PNG or WebP image.");
         if (file.size > 10 * 1024 * 1024) throw new Error("Choose an image under 10 MB.");
-        const img = await shrinkLogo(file, 512);
+        const img = await organizerApi.shrinkLogo(file, 512);
         if (img.size > 2 * 1024 * 1024) throw new Error("The logo must be under 2 MB.");
         const ext = img.type === "image/png" ? "png" : img.type === "image/jpeg" ? "jpg" : "webp";
         const path = userId + "/" + crypto.randomUUID() + "." + ext;
