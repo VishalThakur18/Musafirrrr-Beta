@@ -58,7 +58,7 @@ function OrganizerPage({ slug }) {
                         org.verified && React.createElement(Verified, { size: 15 })),
                     subline && React.createElement("p", { className: "text-[14.5px] text-slatey mt-1" }, subline)),
                 React.createElement("div", { className: "flex gap-2.5 md:pt-[72px]" },
-                    org.whatsapp && React.createElement(WhatsAppButton, { org: org, label: "WhatsApp", message: `Hi ${org.name}! I found you on Musafirrrr and wanted to ask about your upcoming trips.` }),
+                    org.whatsapp && React.createElement(Btn, { as: "a", variant: "wa", icon: "wa", href: waLink(org.whatsapp, `Hi ${org.name}! I found you on Musafirrrr and wanted to ask about your upcoming trips.`), target: "_blank", rel: "noopener noreferrer" }, "WhatsApp"),
                     React.createElement(InstagramButton, { org: org, label: "Instagram" }))),
             org.bio && React.createElement("p", { className: "mt-6 text-[16.5px] text-slatey leading-[1.75] max-w-[68ch]" }, org.bio),
             React.createElement("div", { className: cls('mt-7 grid gap-3 max-w-lg', stats.length === 3 ? 'grid-cols-3' : 'grid-cols-2') }, stats.map(([l, v]) => (React.createElement("div", { key: l, className: "rounded-2xl border border-line p-4" },
