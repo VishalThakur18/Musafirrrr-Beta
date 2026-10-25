@@ -45,14 +45,10 @@ function LoginPage({ params }) {
         }
     };
 
-    const showGoogle = !(params && params.role === 'ORGANIZER');
-
     const footer = React.createElement("p", { className: "text-[14px] text-slatey" }, "New to Musafirrrr? ",
         React.createElement(Link, { to: "/signup", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Create an account"));
     return (React.createElement(AuthShell, { loginIntro: true, footer, title: "Welcome back", sub: "Log in to pick up where you left off." },
         React.createElement("form", { onSubmit: submit, className: "mt-8 space-y-4" },
-            showGoogle && React.createElement(GoogleButton, { label: "Continue with Google" }),
-            showGoogle && React.createElement(OrDivider, null),
             React.createElement(Field, { label: "Email" },
                 React.createElement(Input, { type: "email", value: email, onChange: e => setEmail(e.target.value), placeholder: "you@email.com", autoComplete: "username" })),
             React.createElement(Field, { label: "Password" },

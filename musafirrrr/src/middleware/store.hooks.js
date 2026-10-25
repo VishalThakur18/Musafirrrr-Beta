@@ -65,21 +65,7 @@ refreshAuth();
 window.sbClient.auth.onAuthStateChange((event, session) => {
     if (event === "SIGNED_IN" && session?.user?.id === authState.user?.id) return;
     if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        setTimeout(async () => {
-            let viaGoogle = false;
-            if (event === "SIGNED_IN" && session && session.user) {
-                try { viaGoogle = await finishGoogleLogin(session.user); }
-                catch (e) { console.error(e); toast(e.message || "Could not finish sign-in", "bad"); }
-            }
-            await refreshAuth();
-            if (event === "SIGNED_IN") {
-                let p = null;
-                try { p = sessionStorage.getItem("postLoginPath"); sessionStorage.removeItem("postLoginPath"); } catch (e) {}
-                const me = authState.user;
-                if (p && !/^\/(traveller|organizer)\//.test(p)) go(p);          // e.g. the trip they were viewing
-                else if (viaGoogle && me) go(me.role === "ORGANIZER" ? "/organizer/dashboard" : "/traveller/dashboard");
-            }
-        }, 0);
+        setTimeout(() => refreshAuth(), 0);
     }
 });
 
