@@ -183,6 +183,38 @@
 .organizer-workspace .od-performance select { min-width: 160px; min-height: 44px; border: 1px solid #cdd8d0; border-radius: 10px; padding: 10px 14px; background-color: #f7f9f6; color: #243e30; font-size: 14px; font-weight: 600; cursor: pointer; }
 .organizer-workspace .od-performance select:hover { border-color: #315746; }
 .organizer-workspace .od-performance select:focus-visible, .organizer-workspace .od-analytics-table:focus-visible { outline: 2px solid #315746; outline-offset: 3px; }
+.organizer-workspace .od-analytics-toolbar { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 16px; margin: 22px 0; }
+.organizer-workspace .od-analytics-view { display: flex; gap: 4px; padding: 4px; border: 1px solid #dce3d7; background: #f7f9f4; border-radius: 12px; }
+.organizer-workspace .od-analytics-view button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-radius: 9px; font-size: 13px; font-weight: 650; color: #52665a; }
+.organizer-workspace .od-analytics-view button[aria-pressed="true"] { background: #315746; color: white; }
+.organizer-workspace .od-analytics-view button:focus-visible, .organizer-workspace .od-chart-bar-label a:focus-visible { outline: 2px solid #315746; outline-offset: 3px; }
+.organizer-workspace .od-analytics-charts { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 18px; margin: 20px 0; }
+.organizer-workspace .od-analytics-chart { border: 1px solid #e2e7dd; border-radius: 16px; padding: 22px; min-width: 0; background: #fdfefa; }
+.organizer-workspace .od-analytics-chart h3 { font-size: 16px; font-weight: 700; line-height: 1.5; }
+.organizer-workspace .od-analytics-chart figcaption p, .organizer-workspace .od-chart-note { font-size: 12px; line-height: 1.8; color: #607075; margin-top: 5px; }
+.organizer-workspace .od-chart-scale { display: flex; justify-content: space-between; gap: 12px; margin: 22px 0 14px; font-size: 11px; color: #607075; }
+.organizer-workspace .od-chart-bars { display: grid; gap: 18px; list-style: none; margin: 0; padding: 0; }
+.organizer-workspace .od-chart-bar-label { display: flex; justify-content: space-between; align-items: start; gap: 16px; font-size: 12px; margin-bottom: 7px; }
+.organizer-workspace .od-chart-bar-label a { overflow-wrap: anywhere; color: #315746; text-decoration: underline; text-underline-offset: 3px; }
+.organizer-workspace .od-chart-bar-label strong { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.organizer-workspace .od-chart-track { height: 10px; background: #eaf0e5; border-radius: 5px; overflow: hidden; }
+.organizer-workspace .od-chart-track span { display: block; height: 100%; background: #315746; border-radius: inherit; }
+.organizer-workspace .od-chart-donut-wrap { position: relative; width: 100%; max-width: 240px; margin: 20px auto; }
+.organizer-workspace .od-chart-donut { display: block; width: 100%; height: auto; }
+.organizer-workspace .od-chart-donut-total { position: absolute; inset: 25%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; pointer-events: none; }
+.organizer-workspace .od-chart-donut-total strong { max-width: 100%; overflow-wrap: anywhere; font-size: clamp(16px,2vw,24px); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.organizer-workspace .od-chart-donut-total span { font-size: 11px; color: #607075; margin-top: 6px; }
+.organizer-workspace .od-chart-legend > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 12px 0; border-top: 1px solid #e5eadd; font-size: 12px; }
+.organizer-workspace .od-chart-legend dt { display: flex; align-items: center; gap: 8px; }
+.organizer-workspace .od-chart-legend dt span { width: 10px; height: 10px; border-radius: 3px; }
+.organizer-workspace .od-chart-legend dd { font-variant-numeric: tabular-nums; }
+.organizer-workspace .od-chart-empty { padding: 36px 16px; margin-top: 18px; border: 1px dashed #dce4d5; border-radius: 12px; color: #607075; text-align: center; font-size: 13px; }
+@media (max-width: 800px) { .organizer-workspace .od-analytics-charts { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 480px) {
+  .organizer-workspace .od-analytics-chart { padding: 16px; }
+  .organizer-workspace .od-analytics-toolbar > *, .organizer-workspace .od-analytics-toolbar select { width: 100%; }
+  .organizer-workspace .od-analytics-view button { flex: 1; }
+}
 
 .organizer-workspace .od-stat-link { display: block; color: inherit; text-decoration: none; transition: border-color 150ms ease, box-shadow 150ms ease; }
 .organizer-workspace .od-overview .org-stat-grid > .od-stat-link:hover { border-color: #315746; box-shadow: 0 4px 16px #31574618; }

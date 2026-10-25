@@ -106,7 +106,7 @@ function OrganizerTrips({ selectedTripId, initialStatus } = {}) {
         list.length === 0
             ? React.createElement(EmptyState, { icon: "compass", title: all.length ? "No matching trips" : "No trips here", body: all.length ? "Try another search or status filter." : "Create a trip and it will show up in this list the moment you save it.", action: all.length ? React.createElement(Btn, { variant: "outline", onClick: () => { setSearch(''); setTab('ALL'); } }, "Clear filters") : React.createElement(Btn, { onClick: () => go('/organizer/create') }, "Create trip") })
             : React.createElement("div", { className: "space-y-3" }, list.map(t => (React.createElement("div", { key: t.id, className: "org-trip-row rounded-2xl border border-line p-4 flex flex-col sm:flex-row gap-4" },
-                React.createElement("img", { src: tripCoverSrc(t), alt: "", className: "w-full sm:w-32 h-32 sm:h-24 rounded-xl object-cover" }),
+                React.createElement("img", { ...responsivePhoto(tripCoverSrc(t), 640, '(max-width: 639px) 90vw, 128px'), onError: e => originalPhotoOnError(e, tripCoverSrc(t)), loading: 'lazy', decoding: 'async', alt: "", className: "w-full sm:w-32 h-32 sm:h-24 rounded-xl object-cover" }),
                 React.createElement("div", { className: "flex-1 min-w-0" },
                     React.createElement("div", { className: "flex items-start gap-3 justify-between" },
                         React.createElement("div", { className: "min-w-0" },

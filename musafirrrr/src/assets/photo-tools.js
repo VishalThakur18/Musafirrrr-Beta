@@ -1,7 +1,41 @@
 "use strict";
 
 // One sizing policy for uploads and every card, independent of source orientation.
-const TRIP_PHOTO_POLICY = Object.freeze({ coverWidth: 640, coverHeight: 572, maxUploadEdge: 1600, quality: 0.9 });
+const TRIP_PHOTO_POLICY = Object.freeze({ coverWidth: 640, coverHeight: 572, maxUploadEdge: 1600, quality: 0.82 });
+
+/** Responsive local assets and verified public Supabase image transformations.
+ * Signed URLs, external hosts and data/blob URLs are never rewritten. */
+function responsivePhoto(src, width = 960, sizes = '100vw') {
+    try {
+        const url = new URL(src);
+        const origin = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '';
+        if (url.origin === origin && !url.search && /^\/storage\/v1\/object\/public\/(trip-images|organizer-logos|organizer-banners)\//.test(url.pathname)) {
+            const widths = width <= 256 ? [64, 128, 256] : [320, 640, 960, 1600];
+            const variant = w => {
+                const next = new URL(url.href);
+                next.pathname = next.pathname.replace('/object/public/', '/render/image/public/');
+                next.search = `width=${w}&quality=80&resize=contain`;
+                return next.href;
+            };
+            return { src: variant(width), srcSet: widths.map(w => `${variant(w)} ${w}w`).join(', '), sizes };
+        }
+    } catch (_) { /* Local relative paths use the generated manifest below. */ }
+    const manifest = typeof LOCAL_IMAGE_VARIANTS !== 'undefined' ? LOCAL_IMAGE_VARIANTS : {};
+    const source = Object.keys(manifest).find(key => key === src || manifest[key].some(item => item.src === src));
+    if (!source) return { src };
+    const variants = [...new Map(manifest[source].map(item => [item.width, item])).values()].sort((a, b) => a.width - b.width);
+    const selected = variants.find(item => item.width >= width) || variants[variants.length - 1];
+    return { src: selected.src, srcSet: variants.map(item => `${item.src} ${item.width}w`).join(', '), sizes };
+}
+
+function originalPhotoOnError(event, original) {
+    const image = event.currentTarget;
+    if (image.dataset.originalFallback === original) return;
+    image.dataset.originalFallback = original;
+    image.removeAttribute('srcset');
+    image.removeAttribute('sizes');
+    image.src = original;
+}
 
 /** Native layout reserves the cover area before loading; no resize listeners needed. */
 function tripCoverLayout() {

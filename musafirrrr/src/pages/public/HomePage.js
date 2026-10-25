@@ -45,7 +45,7 @@ function Hero() {
 /** Destination picture tile. */
 function DestinationTile({ name, kind, seed }) {
     return (React.createElement("button", { onClick: () => go('/explore?q=' + encodeURIComponent(name)), className: "group relative w-[168px] sm:w-[200px] shrink-0 rounded-2xl overflow-hidden aspect-[3/4] text-left" },
-        React.createElement("img", { src: destinationImage({ destination: name }) || sceneURL(kind, seed), alt: name, loading: "lazy", decoding: "async", className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
+        React.createElement("img", { ...responsivePhoto(destinationImage({ destination: name }) || sceneURL(kind, seed), 480, '(max-width: 639px) 168px, 200px'), alt: name, loading: "lazy", decoding: "async", className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
         React.createElement("span", { className: "absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/10 to-transparent" }),
         React.createElement("span", { className: "absolute left-4 right-4 bottom-4" },
             React.createElement("span", { className: "block text-white font-bold text-[17px] tracking-tight" }, name),
@@ -93,7 +93,7 @@ function HomePage() {
                 ].map(([title, val, sub, kind, seed]) => {
                     const isGroup = GROUPS.includes(val);
                     return (React.createElement("button", { key: title, onClick: () => go('/explore?' + (isGroup ? 'group=' : 'cat=') + encodeURIComponent(val)), className: "group relative w-[168px] sm:w-[200px] shrink-0 rounded-2xl overflow-hidden aspect-[3/4] text-left" },
-                        React.createElement("img", { src: CATEGORY_PHOTOS[val] || sceneURL(kind, seed), alt: "", loading: "lazy", decoding: "async", style: { objectPosition: val === 'Adventure' ? '70% center' : val === 'Trek' ? '35% center' : 'center' }, className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
+                        React.createElement("img", { ...responsivePhoto(CATEGORY_PHOTOS[val] || sceneURL(kind, seed), 480, '(max-width: 639px) 50vw, 240px'), alt: "", loading: "lazy", decoding: "async", style: { objectPosition: val === 'Adventure' ? '70% center' : val === 'Trek' ? '35% center' : 'center' }, className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
                         React.createElement("span", { className: "absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent" }),
                         React.createElement("span", { className: "absolute left-4 right-4 bottom-4" },
                             React.createElement("span", { className: "block text-white font-bold text-[17px] tracking-tight" }, title),

@@ -15,6 +15,8 @@ function OrganizerDashboard() {
         [orgId], { keepPreviousData: true }
     );
     useOrganizerLiveRefresh(orgId, reload, loading);
+    // Warm analytics in parallel with trips/enquiries. The panel shares this request.
+    useEffect(() => { if (orgId) void tripAnalytics.report(orgId, 30).catch(() => {}); }, [orgId]);
 
     if (!org) {
         return React.createElement(EmptyState, { icon: "user", title: "Your community profile is missing", body: "We couldn't find your organizer profile. Please contact support." });
