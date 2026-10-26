@@ -5,6 +5,17 @@
  * Database columns are mapped to camelCase before reaching the UI.
  */
 const financeApi = {
+    async readAll(table, organizerId, order) {
+        const rows = [];
+        for (let offset = 0; ; offset += 500) {
+            const { data, error } = await this.client().from(table).select('*')
+                .eq('organizer_id', organizerId).order(order, { ascending: false })
+                .order('id', { ascending: true }).range(offset, offset + 499);
+            if (error) throw error;
+            rows.push(...(data || []));
+            if (!data || data.length < 500) return rows;
+        }
+    },
     client() {
         if (!window.sbClient) {
             throw new Error("Supabase is not initialized.");
@@ -15,14 +26,7 @@ const financeApi = {
     async list(organizerId) {
         if (!organizerId) throw new Error("Organizer not found.");
 
-        const { data, error } = await this.client()
-            .from("finance_entries")
-            .select("*")
-            .eq("organizer_id", organizerId)
-            .order("event_date", { ascending: false })
-            .order("created_at", { ascending: false });
-
-        if (error) throw error;
+        const data = await this.readAll('finance_entries', organizerId, 'event_date');
         return (data || []).map(row => this.fromDb(row));
     },
 
@@ -44,7 +48,7 @@ const financeApi = {
                 ? "platform:" + row.traveller_id
                 : row.enquiry_id
                   ? "lead:" + row.enquiry_id
-                  : row.id,
+                  : row.booking_id ? 'booking:' + row.booking_id : row.id,
             travellerName: row.traveller_name || "",
             travellerContact: row.traveller_contact || "",
             type: row.transaction_type,
@@ -75,7 +79,7 @@ const financeApi = {
             organizer_id: organizerId,
             trip_id: entry.tripId || null,
             custom_trip_id: entry.customTripId || null,
-            custom_trip_title: entry.customTripTitle || entry.tripTitle || null,
+            custom_trip_title: entry.customTripId ? entry.customTripTitle || entry.tripTitle || null : null,
             departure_id: entry.departureId || null,
             booking_id: entry.bookingId || null,
             enquiry_id: entry.enquiryId || null,
@@ -95,6 +99,7 @@ const financeApi = {
     },
 
     async create(entry, organizerId) {
+        await this.validateAllocation(entry, organizerId);
         const payload = this.toDb(entry, organizerId);
 
         const { data, error } = await this.client()
@@ -112,6 +117,7 @@ const financeApi = {
             throw new Error("Entry or organizer could not be identified.");
         }
 
+        await this.validateAllocation(entry, organizerId);
         const payload = this.toDb(entry, organizerId);
 
         const { data, error } = await this.client()
@@ -169,14 +175,7 @@ const financeApi = {
     async listBookings(organizerId) {
         if (!organizerId) throw new Error("Organizer not found.");
 
-        const { data, error } = await this.client()
-            .from("finance_bookings")
-            .select("*")
-            .eq("organizer_id", organizerId)
-            .neq("status", "cancelled")
-            .order("created_at", { ascending: false });
-
-        if (error) throw error;
+        const data = await this.readAll('finance_bookings', organizerId, 'created_at');
 
         return (data || []).map(row => this.bookingFromDb(row));
     },
@@ -186,14 +185,13 @@ const financeApi = {
 
         const agreedAmount = Number(booking.agreedAmount);
 
-        if (!Number.isFinite(agreedAmount) || agreedAmount < 0) {
+        if (!/^\d+(\.\d{1,2})?$/.test(String(booking.agreedAmount)) || !Number.isFinite(agreedAmount) || agreedAmount < 0 || agreedAmount > 999999999999 || !FinanceModel.currencies.includes(booking.currency || 'INR')) {
             throw new Error("Enter a valid agreed booking amount.");
         }
 
         const payload = {
             organizer_id: organizerId,
             trip_id: booking.tripId,
-            departure_id: booking.departureId || null,
             enquiry_id: booking.enquiryId || null,
             traveller_id: booking.travellerId || null,
             traveller_name: (booking.travellerName || "").trim(),
@@ -222,6 +220,31 @@ const financeApi = {
         return this.bookingFromDb(data);
     },
 
+    async updateBooking(id, changes, organizerId) {
+        if (!id || !organizerId) throw new Error('Booking or organizer missing.');
+        const amount = Number(changes.agreedAmount);
+        if (!/^\d+(\.\d{1,2})?$/.test(String(changes.agreedAmount)) || !Number.isFinite(amount) || amount < 0 || amount > 999999999999) throw new Error('Enter a valid amount with up to two decimals.');
+        if (!['confirmed', 'completed', 'cancelled'].includes(changes.status)) throw new Error('Choose a valid booking status.');
+        // Trip, currency and identity are immutable here: historical allocations remain valid.
+        const { data, error } = await this.client().from('finance_bookings')
+            .update({ agreed_amount: amount, status: changes.status, notes: changes.notes || '' })
+            .eq('id', id).eq('organizer_id', organizerId).select('*').single();
+        if (error) throw error;
+        return this.bookingFromDb(data);
+    },
+
+    async validateAllocation(entry, organizerId) {
+        if (!entry.bookingId) return;
+        const { data, error } = await this.client().from('finance_bookings').select('*')
+            .eq('id', entry.bookingId).eq('organizer_id', organizerId).single();
+        if (error) throw error;
+        const booking = this.bookingFromDb(data);
+        if (booking.status === 'cancelled' || entry.customTripId || booking.tripId !== entry.tripId || booking.currency !== entry.currency ||
+            ![...FinanceModel.paymentTypes, 'Refund Issued'].includes(entry.type) || !financeBookingMatchesTraveller(booking, entry)) {
+            throw new Error('Choose an active booking for the same trip, traveller and currency. Cancelled bookings cannot accept new linked entries.');
+        }
+    },
+
     /**
      * Synchronous because the page uses this result directly during render.
      * entries and bookings must already be loaded by list() and listBookings().
@@ -232,6 +255,7 @@ const financeApi = {
         const [start, end] = FinanceModel.range(filters);
         const paymentTypes = FinanceModel.paymentTypes;
 
+        entries = entries.filter(entry => entry.organizerId === organizerId);
         const matchesFilters = entry =>
             entry.currency === filters.currency &&
             entry.date >= start &&
@@ -248,39 +272,36 @@ const financeApi = {
         const sum = types =>
             inRange
                 .filter(entry => types.includes(entry.type))
-                .reduce((total, entry) => total + Number(entry.amount || 0), 0);
+                .reduce((total, entry) => total + Math.round(Number(entry.amount || 0) * 100), 0) / 100;
 
         const relevantBookings = bookings.filter(booking =>
             booking.organizerId === organizerId &&
-            booking.status !== "cancelled" &&
             booking.currency === filters.currency &&
             (!filters.tripId || booking.tripId === filters.tripId) &&
             (!filters.departureId ||
                 booking.departureId === filters.departureId)
         );
 
-        const bookingIds = new Set(
-            relevantBookings.map(booking => booking.bookingId)
-        );
-
         const balances = relevantBookings.map(booking => {
             const linkedEntries = entries.filter(
-                entry => entry.bookingId === booking.bookingId
+                entry => entry.bookingId === booking.bookingId && entry.tripId === booking.tripId && entry.currency === booking.currency
             );
 
             const totalPayments = linkedEntries
                 .filter(entry => paymentTypes.includes(entry.type))
-                .reduce((total, entry) => total + Number(entry.amount || 0), 0);
+                .reduce((total, entry) => total + Math.round(Number(entry.amount || 0) * 100), 0) / 100;
 
             const totalRefunds = linkedEntries
                 .filter(entry => entry.type === "Refund Issued")
-                .reduce((total, entry) => total + Number(entry.amount || 0), 0);
+                .reduce((total, entry) => total + Math.round(Number(entry.amount || 0) * 100), 0) / 100;
 
             const adjustments = linkedEntries
                 .filter(entry => entry.type === "Adjustment")
                 .reduce((total, entry) => total + Number(entry.amount || 0), 0);
 
-            const netPaid = totalPayments - totalRefunds + adjustments;
+            // Refunds are cash outflows, not a new obligation to pay. Change the
+            // agreed amount explicitly for a revised agreement; cancel to close it.
+            const outstanding = Math.max(0, Math.round(booking.agreedAmount * 100) - Math.round(totalPayments * 100)) / 100;
 
             return {
                 bookingId: booking.bookingId,
@@ -289,11 +310,15 @@ const financeApi = {
                 tripTitle: "",
                 currency: booking.currency,
                 bookingStatus: booking.status,
+                travellerName: booking.travellerName,
+                travellerContact: booking.travellerContact,
+                paymentStatus: booking.status === 'cancelled' ? 'Cancelled' : outstanding === 0 ? 'Paid' : totalPayments > 0 ? 'Partially paid' : 'Unpaid',
                 agreedAmount: booking.agreedAmount,
                 totalPayments,
                 totalRefunds,
                 adjustments,
-                outstandingAmount: Math.max(0, booking.agreedAmount - netPaid)
+                outstandingAmount: booking.status === 'cancelled' ? 0 : outstanding,
+                overpayment: Math.max(0, Math.round(totalPayments * 100) - Math.round(booking.agreedAmount * 100)) / 100
             };
         });
 
@@ -310,16 +335,16 @@ const financeApi = {
                 );
 
                 const tripBookings = relevantBookings.filter(
-                    booking => booking.tripId === tripId
+                    booking => booking.tripId === tripId && booking.status !== 'cancelled'
                 );
 
                 const tripSum = types =>
                     tripEntries
                         .filter(entry => types.includes(entry.type))
                         .reduce(
-                            (total, entry) => total + Number(entry.amount || 0),
+                            (total, entry) => total + Math.round(Number(entry.amount || 0) * 100),
                             0
-                        );
+                        ) / 100;
 
                 const tripBalances = balances.filter(
                     balance => balance.tripId === tripId
@@ -329,45 +354,57 @@ const financeApi = {
                     tripId,
                     departureId: filters.departureId || "",
                     departureDate: "",
-                    confirmedBookingValue: tripBookings.reduce(
-                        (total, booking) => total + booking.agreedAmount,
+                    confirmedBookingValue: tripBalances.length ? tripBookings.reduce(
+                        (total, booking) => total + Math.round(booking.agreedAmount * 100),
                         0
-                    ),
+                    ) / 100 : null,
                     paymentsReceived: tripSum(paymentTypes),
                     recordedExpenses: tripSum(["Expense"]),
                     recordedRefunds: tripSum(["Refund Issued"]),
                     otherIncome: tripSum(["Other Income"]),
-                    outstandingBalances: tripBalances.reduce(
-                        (total, balance) => total + balance.outstandingAmount,
+                    outstandingBalances: tripBalances.length ? tripBalances.reduce(
+                        (total, balance) => total + Math.round(balance.outstandingAmount * 100),
                         0
-                    ),
-                    estimatedProfit:
+                    ) / 100 : null,
+                    estimatedProfit: Math.round((
                         tripSum(paymentTypes) +
                         tripSum(["Other Income"]) -
                         tripSum(["Expense"]) -
-                        tripSum(["Refund Issued"])
+                        tripSum(["Refund Issued"])) * 100) / 100
                 };
             });
 
         return {
-            confirmedBookingValue: relevantBookings.reduce(
-                (total, booking) => total + booking.agreedAmount,
+            confirmedBookingValue: relevantBookings.length ? relevantBookings.filter(b => b.status !== 'cancelled').reduce(
+                (total, booking) => total + Math.round(booking.agreedAmount * 100),
                 0
-            ),
+            ) / 100 : null,
             paymentsReceived: sum(paymentTypes),
             recordedExpenses: sum(["Expense"]),
             recordedRefunds: sum(["Refund Issued"]),
             otherIncome: sum(["Other Income"]),
-            estimatedProfit:
+            estimatedProfit: Math.round((
                 sum(paymentTypes) +
                 sum(["Other Income"]) -
                 sum(["Expense"]) -
-                sum(["Refund Issued"]),
-            outstandingBalances: balances.reduce(
-                (total, balance) => total + balance.outstandingAmount,
+                sum(["Refund Issued"])) * 100) / 100,
+            outstandingBalances: balances.length ? balances.reduce(
+                (total, balance) => total + Math.round(balance.outstandingAmount * 100),
                 0
-            ),
+            ) / 100 : null,
             balances,
+            // Drill-downs use these exact contributors rather than a second filter pass.
+            breakdowns: {
+                confirmedBookingValue: { kind: 'bookings', rows: relevantBookings.filter(b => b.status !== 'cancelled'), excludedCancelled: relevantBookings.filter(b => b.status === 'cancelled').length },
+                outstandingBalances: { kind: 'balances', rows: balances.map(b => ({ ...b, payments: entries.filter(e => e.bookingId === b.bookingId && e.tripId === b.tripId && e.currency === b.currency && paymentTypes.includes(e.type)) })) },
+                paymentsReceived: { kind: 'entries', rows: inRange.filter(e => paymentTypes.includes(e.type)) },
+                recordedExpenses: { kind: 'entries', rows: inRange.filter(e => e.type === 'Expense') },
+                recordedRefunds: { kind: 'entries', rows: inRange.filter(e => e.type === 'Refund Issued') },
+                estimatedProfit: {
+                    kind: 'cash', rows: inRange.filter(e => [...paymentTypes, 'Other Income', 'Expense', 'Refund Issued'].includes(e.type)),
+                    components: { payments: sum(paymentTypes), otherIncome: sum(['Other Income']), expenses: sum(['Expense']), refunds: sum(['Refund Issued']) }
+                }
+            },
             tripFinance,
             reportingPeriod: { start, end },
             currency: filters.currency
@@ -390,3 +427,14 @@ const financeApi = {
         ).balances || [];
     }
 };
+
+function financeBookingMatchesTraveller(booking, entry) {
+    if (booking.travellerId && entry.travellerId) return booking.travellerId === entry.travellerId;
+    if (booking.enquiryId && entry.enquiryId) return booking.enquiryId === entry.enquiryId;
+    const clean = value => String(value || '').trim().toLowerCase();
+    const contact = value => String(value || '').includes('@') ? clean(value) : String(value || '').replace(/\D/g, '');
+    // Legacy manual bookings can lack contact details. An explicitly selected
+    // booking identity and matching name can still receive a payment.
+    if (!contact(booking.travellerContact) && entry.travellerKey === 'booking:' + booking.bookingId) return !!clean(entry.travellerName) && clean(booking.travellerName) === clean(entry.travellerName);
+    return !!clean(entry.travellerName) && !!contact(entry.travellerContact) && clean(booking.travellerName) === clean(entry.travellerName) && contact(booking.travellerContact) === contact(entry.travellerContact);
+}

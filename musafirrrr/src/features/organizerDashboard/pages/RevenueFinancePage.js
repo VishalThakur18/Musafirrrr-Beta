@@ -11,20 +11,21 @@ function FinanceEmptyState({ title, body, action }) {
     );
 }
 
-function FinanceSummaryCard({ label, value, currency, description, icon }) {
+function FinanceSummaryCard({ label, value, currency, description, icon, onClick, disabled }) {
     const h = React.createElement;
 
     return h(
-        "article",
-        { className: "finance-metric" },
+        "button",
+        { type: 'button', className: "finance-metric", onClick, disabled, 'aria-haspopup': 'dialog', 'aria-label': `View ${label} breakdown` },
         h(
-            "div",
-            null,
+            "span",
+            { className: 'finance-metric-header' },
             h("span", null, label),
             h(Icon, { name: icon, size: 19 })
         ),
         h("strong", null, FinanceModel.money(value, currency)),
-        h("p", null, description)
+        h("span", { className: 'finance-metric-description' }, description),
+        h('span', { className: 'finance-metric-link' }, 'View breakdown →')
     );
 }
 
@@ -490,7 +491,7 @@ function TripFinanceSummary({
         ["recordedExpenses", "Recorded expenses"],
         ["recordedRefunds", "Recorded refunds"],
         ["outstandingBalances", "Outstanding balances"],
-        ["estimatedProfit", "Estimated profit"]
+        ["estimatedProfit", "Recorded cash surplus"]
     ];
 
     return h(
@@ -703,6 +704,8 @@ function RevenueFinancePage({ data = {}, onFiltersChange }) {
     const [financeError, setFinanceError] = useState("");
     const [refreshVersion, setRefreshVersion] = useState(0);
     const [editor, setEditor] = useState(null);
+    const [bookingEditor, setBookingEditor] = useState(null);
+    const [metricDetail, setMetricDetail] = useState(null);
     const [detail, setDetail] = useState(null);
     const [notice, setNotice] = useState("");
     const [busy, setBusy] = useState(false);
@@ -890,7 +893,7 @@ function RevenueFinancePage({ data = {}, onFiltersChange }) {
     typeof financeApi !== "undefined" &&
     financeApi &&
     typeof financeApi.summary === "function"
-        ? financeApi.summary(
+        && financeStatus === 'ready' ? financeApi.summary(
               organizerId,
               filters,
               entries,
@@ -918,7 +921,7 @@ function RevenueFinancePage({ data = {}, onFiltersChange }) {
         [
             "outstandingBalances",
             "Outstanding Balances",
-            "Requires confirmed booking amounts and payment allocations.",
+            "Current balances from all linked payments. No bookings means unavailable, not fully paid.",
             "clock"
         ],
         [
@@ -935,8 +938,8 @@ function RevenueFinancePage({ data = {}, onFiltersChange }) {
         ],
         [
             "estimatedProfit",
-            "Estimated Profit",
-            "Available only when the underlying financial data supports it.",
+            "Recorded Cash Surplus",
+            "Recorded income minus expenses and refunds for the selected transactions; not final profit.",
             "chart"
         ]
     ];
@@ -946,7 +949,7 @@ function RevenueFinancePage({ data = {}, onFiltersChange }) {
             setFinanceError(
                 "Your organizer profile could not be identified. Sign in again."
             );
-            return;
+            throw new Error('Your organizer profile could not be identified.');
         }
 
         setBusy(true);
@@ -975,6 +978,7 @@ function RevenueFinancePage({ data = {}, onFiltersChange }) {
                     ? error.message
                     : "Could not save the financial entry."
             );
+            throw error;
         } finally {
             setBusy(false);
         }
@@ -1174,12 +1178,15 @@ function RevenueFinancePage({ data = {}, onFiltersChange }) {
                     value:
                         summary && summary[key] != null
                             ? summary[key]
-                            : 0,
-                    currency: filters.currency
+                            : null,
+                    currency: filters.currency,
+                    disabled: financeStatus !== 'ready',
+                    onClick: () => setMetricDetail({ metric: key, label, value: summary[key], breakdown: summary.breakdowns?.[key], filters: { ...filters }, trips: [...trips] })
                 })
             )
         ),
 
+        metricDetail && h(FinanceMetricBreakdown, { snapshot: metricDetail, onClose: () => setMetricDetail(null) }),
         h(FinanceFilterBar, {
             filters,
             onChange: updateFilters,
@@ -1315,9 +1322,34 @@ function RevenueFinancePage({ data = {}, onFiltersChange }) {
                 updateFilters({ tripId, departureId: "" })
         }),
 
-        h(OutstandingBalances, {
+        h(FinanceBookingBalances, {
             balances: Array.isArray(balances) ? balances : [],
-            currency: filters.currency
+            bookings: savedBookings,
+            entries: entries.filter(e => e.currency === filters.currency && (!filters.tripId || m.tripKey(e) === filters.tripId) && (!filters.departureId || e.departureId === filters.departureId)),
+            trips, currency: filters.currency, ready: financeStatus === 'ready' && !busy,
+            onCreate: () => setBookingEditor({ initial: null, key: 'new' }),
+            onManage: booking => setBookingEditor({ initial: booking, key: booking.bookingId }),
+            onEditEntry: entry => setEditor({ initial: entry, key: entry.id }),
+            onPayment: booking => setEditor({ key: 'payment-' + booking.bookingId, initial: {
+                type: 'Payment Received', category: 'Traveller Payment', amount: '', date: m.today(), currency: booking.currency,
+                tripId: booking.tripId, bookingId: booking.bookingId, departureId: booking.departureId || '',
+                travellerName: booking.travellerName, travellerContact: booking.travellerContact,
+                travellerId: booking.travellerId, enquiryId: booking.enquiryId,
+                travellerKey: booking.travellerId ? 'platform:' + booking.travellerId : booking.enquiryId ? 'lead:' + booking.enquiryId : 'booking:' + booking.bookingId,
+                description: '', notes: '', referenceNumber: '', paymentMethod: ''
+            } })
+        }),
+        bookingEditor && h(FinanceBookingForm, {
+            key: bookingEditor.key, initial: bookingEditor.initial, trips: registeredTrips, contacts,
+            onClose: () => setBookingEditor(null),
+            onSave: async booking => {
+                const saved = booking.bookingId
+                    ? await financeApi.updateBooking(booking.bookingId, booking, organizerId)
+                    : await financeApi.createBooking(booking, organizerId);
+                setSavedBookings(current => [saved, ...current.filter(b => b.bookingId !== saved.bookingId)]);
+                setBookingEditor(null); setNotice('Finance booking saved. Link existing payments or record a new payment against it.');
+                setRefreshVersion(v => v + 1);
+            }
         }),
 
         h(FinanceReports, {

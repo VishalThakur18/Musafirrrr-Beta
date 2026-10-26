@@ -1,7 +1,7 @@
 "use strict";
 
 /** Feature-local focus management for the finance dialog. */
-function FinanceDialog({ title, onClose, children }) {
+function FinanceDialog({ title, onClose, children, focusTitle = false }) {
     const ref = useRef(null);
 
     useEffect(() => {
@@ -19,7 +19,7 @@ function FinanceDialog({ title, onClose, children }) {
             )
         ];
 
-        container.querySelector("input, select, button")?.focus();
+        container.querySelector(focusTitle ? 'h2' : "input, select, button")?.focus();
 
         const trap = event => {
             if (event.key !== "Tab") return;
@@ -67,7 +67,7 @@ function FinanceDialog({ title, onClose, children }) {
                 className: "finance-ui finance-dialog",
                 ref
             },
-            React.createElement("h2", null, title),
+            React.createElement("h2", { tabIndex: focusTitle ? -1 : undefined }, title),
             children
         )
     );
@@ -121,6 +121,11 @@ function FinancialEntryForm({
         setValue(current => ({
             ...current,
             [key]: next,
+            ...(key === 'currency' || key === 'travellerName' || key === 'travellerContact' ? { bookingId: '' } : {}),
+            ...(key === 'bookingId' && next ? (() => {
+                const booking = bookings.find(b => b.bookingId === next);
+                return booking ? { travellerName: booking.travellerName, travellerContact: booking.travellerContact || current.travellerContact, travellerId: booking.travellerId, enquiryId: booking.enquiryId, travellerKey: booking.travellerId ? 'platform:' + booking.travellerId : booking.enquiryId ? 'lead:' + booking.enquiryId : 'booking:' + booking.bookingId } : {};
+            })() : {}),
 
             ...(key === "type"
                 ? { category: m.categories(next)[0] }
@@ -283,7 +288,8 @@ function FinancialEntryForm({
             travellerName: person?.name || "",
             travellerContact: person?.contact || "",
             enquiryId: person?.enquiryId || null,
-            travellerId: person?.travellerId || null
+            travellerId: person?.travellerId || null,
+            bookingId: ''
         }));
 
         setErrors(current => {
@@ -297,6 +303,10 @@ function FinancialEntryForm({
         setFailure("");
     };
 
+    bookings.filter(b => b.tripId === value.tripId && b.currency === value.currency).forEach(b => {
+        const key = b.travellerId ? 'platform:' + b.travellerId : b.enquiryId ? 'lead:' + b.enquiryId : 'booking:' + b.bookingId;
+        if (!travellerOptions.has(key)) travellerOptions.set(key, { key, name: b.travellerName, contact: b.travellerContact, enquiryId: b.enquiryId, travellerId: b.travellerId });
+    });
     const availableDepartures = departures.filter(
         departure => departure.tripId === value.tripId
     );
@@ -304,6 +314,8 @@ function FinancialEntryForm({
     const availableBookings = bookings.filter(
         booking =>
             booking.tripId === value.tripId &&
+            booking.currency === value.currency && booking.status !== 'cancelled' &&
+            (!value.travellerName.trim() || financeBookingMatchesTraveller(booking, value)) &&
             (!value.departureId ||
                 booking.departureId === value.departureId)
     );
@@ -463,7 +475,7 @@ const payload = {
     enquiryId: payment ? value.enquiryId : null,
 
     travellerId: payment
-        ? contacts.find(c => c.id === value.enquiryId)?.travellerId || null
+        ? value.travellerId || contacts.find(c => c.id === value.enquiryId)?.travellerId || null
         : null,
 
     bookingId: payment && !isCustomTrip
@@ -490,7 +502,7 @@ await onPreview(payload);
     return h(
         FinanceDialog,
         {
-            title: initial
+            title: initial?.id
                 ? "Edit Financial Entry"
                 : "Add Financial Entry",
             onClose: pending ? () => {} : onClose
@@ -699,15 +711,15 @@ await onPreview(payload);
                                 "",
                                 availableBookings.length
                                     ? "Unallocated"
-                                    : "Booking records not connected"
+                                    : "No matching booking — create one in Bookings & Outstanding Balances"
                             ],
                             ...availableBookings.map(booking => [
                                 booking.bookingId,
-                                booking.bookingId
+                                `${booking.travellerName} · ${m.money(booking.agreedAmount, booking.currency)} · ${booking.bookingId.slice(0, 8)}`
                             ])
                         ],
                         {
-                            disabled: !availableBookings.length
+                            disabled: !availableBookings.length && !value.bookingId
                         }
                     ),
 
@@ -823,7 +835,7 @@ await onPreview(payload);
                           },
                           pending
                               ? "Saving…"
-                              : initial
+                              : initial?.id
                                 ? "Save Changes"
                                 : "Save Financial Entry"
                       )
