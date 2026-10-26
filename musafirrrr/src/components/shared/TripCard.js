@@ -245,12 +245,17 @@ function TripCard({ trip, priority = false }) {
 
 
 /** Responsive grid of trip cards (with loading/empty states). */
-function TripGrid({ trips, loading, cols = '3', empty, priority = false }) {
+function TripGrid({ trips, loading, error, onRetry, cols = '3', empty, priority = false }) {
     const c = cols === '4'
         ? 'grid gap-5 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
         : 'grid gap-5 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
     if (loading && !trips.length)
         return React.createElement("div", { className: c }, Array.from({ length: 6 }).map((_, i) => React.createElement(CardSkeleton, { key: i })));
+    if (error && !trips.length)
+        return React.createElement('div', { role: 'alert' }, React.createElement(EmptyState, {
+            title: 'Trips could not be loaded', body: 'Please try again in a moment.',
+            action: onRetry && React.createElement(Btn, { onClick: onRetry }, 'Try again')
+        }));
     if (!trips.length)
         return empty || React.createElement(EmptyState, { title: "No trips match those filters", body: "Try widening the dates or raising the budget \u2014 new trips get listed every week.", action: React.createElement(Btn, { onClick: () => go('/explore') }, "Clear filters") });
     return React.createElement("div", { className: cls(c, 'trip-card-grid') },

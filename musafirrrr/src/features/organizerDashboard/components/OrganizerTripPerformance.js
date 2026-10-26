@@ -53,6 +53,6 @@ function OrganizerTripPerformance({ organizerId }) {
                         h('th', { scope: 'row' }, h(Link, { to: '/organizer/edit/' + row.id }, row.title), h('small', null, row.destination)),
                         ...[row.views, row.enquiries, rate(row.enquiries, row.views), row.whatsapp_clicks, row.instagram_clicks, row.enquiry_opens].map((value, i) => h('td', { key: i }, value)))))))
                 : h('p', { className: 'org-inline-empty' }, 'Create a trip to start measuring performance.'),
-            h(Btn, { variant: 'ghost', onClick: reload }, 'Refresh analytics'),
+            h(Btn, { variant: 'outline', className: 'od-analytics-refresh', onClick: reload, disabled: loading, loading, 'aria-busy': loading }, loading ? 'Refreshing analytics…' : 'Refresh analytics'),
             h('p', { className: 'od-availability-note' }, `Updated ${new Date(report.as_of).toLocaleString()}. Rolling ${days}-day window. Views count visible trip-page visits, including repeat visits. Tracking begins after installation; earlier views cannot be recovered. Enquiry rate is enquiries divided by recorded views, not a unique-visitor conversion rate. A dash means no views were recorded. Clicks and form opens do not confirm a conversation, enquiry or booking.`)));
 }

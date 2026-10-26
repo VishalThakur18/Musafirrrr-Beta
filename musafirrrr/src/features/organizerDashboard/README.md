@@ -26,15 +26,12 @@ Pages are plain global React scripts, loaded explicitly by [index.html](../../..
 
 Shared UI controls, authentication and backend services remain in their existing shared locations. The existing shared lead row stays in `pages/OrganizerDashboard.js`; no component logic was changed during this move.
 
-## Deferred: complete Notes & Follow-up
+## Notes & Follow-up
 
-User deferred this work on 2026-10-21. Keep the existing UI preview; do not treat this feature as complete or implement its backend without renewed approval.
+Connected on 2026-10-26 using the existing `organizer_enquiry_notes` service and database structure. No database changes or migrations were made. Saved private notes appear beneath each lead and in dashboard reminders. Reminders are ordered by date, exclude cancelled enquiries, and open the selected lead. Completing a follow-up clears its date and records contact now; saving another date reschedules it. These are in-app reminders, not email or push notifications.
 
-- Current notes, last-contacted time and follow-up date are temporary page state, cleared on navigation or refresh.
-- Complete organizer-private note saving/editing and persistent last-contacted/follow-up dates.
-- Connect overdue, due-today and upcoming filters to saved records, and add dashboard reminders.
-- Include saving, success, error and conflicting-edit feedback.
-- First finish Phase 1A using actual Supabase schema, constraints, policies and trigger/function definitions. Database isolation has not yet been verified.
-- Enforce organizer ownership in the database; travellers and other organizers must not access private notes.
+- Filters use saved dates, and search includes saved notes. Unsaved edits stay in the editor until saved.
+- A pre-save timestamp check warns about edits from another session; this is best-effort detection, not an atomic concurrency guarantee.
+- Existing database ownership policies remain responsible for isolation; they were not changed or verified against production in this update.
 - Opening WhatsApp or a phone link must not automatically record successful contact or change lead status.
-- Preserve existing enquiry records, status meanings and seat availability. No backend changes have been made for this feature.
+- Enquiry statuses and seat availability are unchanged.
