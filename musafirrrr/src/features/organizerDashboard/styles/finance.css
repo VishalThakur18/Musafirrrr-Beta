@@ -14,6 +14,15 @@
 .finance-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
 .finance-metric { padding: 22px; background: #fffefa; border: 1px solid #e5e5dc; border-radius: 18px; box-shadow: 0 3px 12px #253b3004; transition: border-color .15s; }
 .finance-metric:hover { border-color: #a5b79e; }
+.finance-metric { text-align: left; width: 100%; cursor: pointer; }
+.finance-metric:disabled { cursor: wait; }
+.finance-metric-link { display: block; margin-top: 14px; color: #315746; font-size: 12px; font-weight: 650; }
+.finance-metric-header { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; font-weight: 650; }
+.finance-metric-description { display: block; font-size: 11px; color: #607075; }
+.finance-breakdown-total { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px; margin: 18px 0; background: #f1f5ed; border-radius: 12px; }
+.finance-breakdown-total strong { font-size: 22px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.finance-breakdown-list { margin: 16px 0; }
+.finance-breakdown-list .finance-trip { overflow-wrap: anywhere; }
 .finance-metric > div { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; font-weight: 650; }
 .finance-metric svg { flex-shrink: 0; color: #627b59; }
 .finance-metric > strong { display: block; font-size: clamp(17px,1.8vw,23px); line-height: 1.4; margin: 20px 0 10px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

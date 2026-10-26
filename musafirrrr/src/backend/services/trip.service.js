@@ -99,8 +99,7 @@ async bySlug(slug) {
                 ),
                 trip_images(image_url, position),
                 itinerary_days(day_number, title, description),
-                trip_inclusions(item, kind),
-                reviews(rating)
+                trip_inclusions(item, kind)
             `)
             .eq('slug', slug)
             .maybeSingle();

@@ -87,7 +87,7 @@ function App() {
             path === '/organizer/finance' ? React.createElement(RevenueFinancePage, { key: me?.organizer?.id }) :
                 path === '/organizer/create' ? React.createElement(TripWizard, null) :
                     parts[1] === 'edit' ? React.createElement(TripWizard, { tripId: parts[2] }) :
-                        path === '/organizer/leads' ? React.createElement(OrganizerLeads, { key: params.status || 'ALL', initialStatus: params.status }) :
+                        path === '/organizer/leads' ? React.createElement(OrganizerLeads, { key: (params.status || 'ALL') + (params.lead || ''), initialStatus: params.status, initialLead: params.lead }) :
                             path === '/organizer/profile' ? React.createElement(OrganizerProfileEdit, null) :
                                 path === '/organizer/settings' ? React.createElement(OrganizerSettings, null) :
                                     React.createElement(OrganizerDashboard, null);

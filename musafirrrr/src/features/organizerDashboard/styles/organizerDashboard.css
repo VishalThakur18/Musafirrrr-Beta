@@ -218,3 +218,45 @@
 
 .organizer-workspace .od-stat-link { display: block; color: inherit; text-decoration: none; transition: border-color 150ms ease, box-shadow 150ms ease; }
 .organizer-workspace .od-overview .org-stat-grid > .od-stat-link:hover { border-color: #315746; box-shadow: 0 4px 16px #31574618; }
+.organizer-workspace .od-saved-note { padding: 12px 20px; background: #faf8f4; border-top: 1px solid #e7e3dc; }
+.organizer-workspace .od-saved-note p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0; }
+.organizer-workspace .od-saved-note strong { font-size: 12px; }
+.organizer-workspace .od-saved-note__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.organizer-workspace .od-saved-note__heading strong { min-width: 0; line-height: 1.5; }
+.organizer-workspace .od-saved-note__actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.organizer-workspace .od-saved-note__actions small { min-width: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.organizer-workspace .od-saved-note__delete { flex-shrink: 0; margin-left: auto; white-space: nowrap; height: 32px; padding: 0 12px; font-size: 12px; }
+.organizer-workspace .od-analytics-refresh { min-height: 40px; padding: 8px 16px; border: 1px solid #b9cdbd; border-radius: 10px; background: #edf3ed; color: #315746; font-size: 13px; font-weight: 700; }
+.organizer-workspace .od-analytics-refresh:hover:not(:disabled) { background: #dfeadb; border-color: #315746; }
+.organizer-workspace .od-analytics-refresh:focus-visible { outline: 2px solid #315746; outline-offset: 3px; }
+.organizer-workspace .od-follow-ups { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e7e3dc; }
+.organizer-workspace .od-follow-ups__heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.organizer-workspace .od-follow-ups h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 750; color: #243e30; }
+.organizer-workspace .od-follow-ups__manage { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; font-size: 12px; font-weight: 650; color: #315746; text-underline-offset: 4px; }
+.organizer-workspace .od-follow-ups__manage:hover { text-decoration: underline; }
+.organizer-workspace .od-follow-ups__summary { margin: 8px 0 14px; color: #607075; font-size: 12px; line-height: 1.7; }
+.organizer-workspace .od-follow-ups__list { display: grid; gap: 10px; }
+.organizer-workspace .od-reminder { display: grid; grid-template-columns: minmax(0, 1fr) 28px; align-items: center; gap: 14px; padding: 16px; border: 1px solid #dfe5dc; border-radius: 12px; background: #fafbf9; text-decoration: none; transition: background .15s, border-color .15s; }
+.organizer-workspace .od-reminder:hover { background: #edf3ed; border-color: #9eb496; }
+.organizer-workspace .od-reminder:focus-visible, .organizer-workspace .od-follow-ups__manage:focus-visible { outline: 2px solid #315746; outline-offset: 3px; }
+.organizer-workspace .od-reminder__content { display: grid; gap: 9px; min-width: 0; }
+.organizer-workspace .od-reminder__name { font-size: 14px; line-height: 1.5; color: #243e30; overflow-wrap: anywhere; }
+.organizer-workspace .od-reminder__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #52665a; }
+.organizer-workspace .od-reminder__badge { padding: 3px 8px; border-radius: 6px; background: #e7eee5; color: #315746; font-size: 11px; font-weight: 700; }
+.organizer-workspace .od-reminder__badge[data-state="Overdue"] { background: #fbe9e6; color: #9a362e; }
+.organizer-workspace .od-reminder__badge[data-state="Due today"] { background: #fff0d1; color: #795010; }
+.organizer-workspace .od-reminder__note { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 12px; line-height: 1.7; color: #607075; }
+.organizer-workspace .od-reminder__note-label { font-weight: 650; }
+.organizer-workspace .od-reminder__arrow { display: flex; justify-content: center; color: #315746; }
+/* Keep older cached reminder markup out of the shared 40px icon column. */
+.organizer-workspace .od-follow-ups .org-action-row { grid-template-columns: minmax(0, 1fr) 28px; width: 100%; }
+.organizer-workspace .od-follow-ups .org-action-row > span:first-child { min-width: 0; }
+.organizer-workspace .od-reminder { width: 100%; min-width: 0; box-sizing: border-box; }
+.organizer-workspace .od-reminder__badge, .organizer-workspace .od-reminder__meta time { white-space: nowrap; }
+.organizer-workspace .od-follow-ups__controls { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 16px; }
+.organizer-workspace .od-follow-ups__controls span { font-size: 12px; color: #607075; font-variant-numeric: tabular-nums; }
+.organizer-workspace .od-follow-ups__controls button { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #b9cdbd; border-radius: 50%; color: #315746; background: #edf3ed; font-size: 20px; }
+.organizer-workspace .od-follow-ups__controls button:hover:not(:disabled) { background: #dfeadb; }
+.organizer-workspace .od-follow-ups__controls button:disabled { opacity: .35; cursor: not-allowed; }
+.organizer-workspace .od-follow-ups__controls button:focus-visible { outline: 2px solid #315746; outline-offset: 3px; }
+.organizer-workspace .od-follow-ups__list .od-reminder { min-height: 144px; }

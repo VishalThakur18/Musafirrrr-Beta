@@ -18,7 +18,7 @@
 
 <!-- Global styles -->
 <link rel="stylesheet" href="assets/css/styles.css">
-<link rel="stylesheet" href="src/features/organizerDashboard/styles/organizerDashboard.css">
+<link rel="stylesheet" href="src/features/organizerDashboard/styles/organizerDashboard.css?v=20261027-analytics-button-1">
 <link rel="stylesheet" href="src/features/organizerDashboard/styles/finance.css">
 
 <!-- Tailwind (CDN) + our theme config (config must come right after the CDN script) -->
@@ -69,11 +69,12 @@
 
 <!-- 4. BACKEND (mock database + services) -->
 <script src="src/backend/store.js"></script>
-<script src="src/backend/services/data.service.js"></script>
+<script src="src/backend/services/data.service.js?v=20261027-trip-loading-1"></script>
 <script src="src/backend/services/auth.service.js"></script>
-<script src="src/backend/services/trip.service.js"></script>
-<script src="src/backend/services/organizer.service.js"></script>
+<script src="src/backend/services/trip.service.js?v=20261027-trip-loading-1"></script>
+<script src="src/backend/services/organizer.service.js?v=20261026-followups-3"></script>
 <script src="src/backend/services/wishlist.service.js"></script>
+<script src="src/backend/services/finance.service.js"></script>
 <script src="src/backend/services/enquiry.service.js"></script>
 
 
@@ -95,7 +96,7 @@
 <script src="src/components/ui/Layout.js"></script>
 
 <!-- 6b. SHARED COMPONENTS -->
-<script src="src/components/shared/TripCard.js"></script>
+<script src="src/components/shared/TripCard.js?v=20261027-trip-loading-1"></script>
 <script src="src/components/shared/ContactButtons.js"></script>
 <script src="src/components/shared/SearchBar.js"></script>
 
@@ -106,8 +107,8 @@
 <script src="src/components/layout/Footer.js"></script>
 
 <!-- 7a. PUBLIC PAGES -->
-<script src="src/pages/public/HomePage.js"></script>
-<script src="src/pages/public/ExplorePage.js"></script>
+<script src="src/pages/public/HomePage.js?v=20261027-trip-loading-1"></script>
+<script src="src/pages/public/ExplorePage.js?v=20261027-trip-loading-1"></script>
 <script src="src/pages/public/TripDetailPage.js"></script>
 <script src="src/pages/public/OrganizerPage.js"></script>
 <script src="src/pages/public/HowItWorksPage.js"></script>
@@ -128,14 +129,16 @@
 <script src="src/features/organizerDashboard/services/liveUpdates.js"></script>
 <script src="src/features/organizerDashboard/components/OrganizerShell.js"></script>
 <script src="src/features/organizerDashboard/components/OrganizerAnalyticsCharts.js"></script>
-<script src="src/features/organizerDashboard/components/OrganizerTripPerformance.js"></script>
-<script src="src/features/organizerDashboard/pages/OrganizerDashboard.js"></script>
-<script src="src/features/organizerDashboard/pages/OrganizerLeads.js"></script>
+<script src="src/features/organizerDashboard/components/OrganizerTripPerformance.js?v=20261027-analytics-button-1"></script>
+<script src="src/features/organizerDashboard/pages/OrganizerDashboard.js?v=20261026-followups-3"></script>
+<script src="src/features/organizerDashboard/pages/OrganizerLeads.js?v=20261027-notes-layout-3"></script>
 <script src="src/features/organizerDashboard/components/OrganizerTripSheet.js"></script>
 <script src="src/features/organizerDashboard/pages/OrganizerTrips.js"></script>
 <script src="src/features/organizerDashboard/pages/OrganizerDepartures.js"></script>
 <script src="src/features/organizerDashboard/finance/finance.model.js"></script>
 <script src="src/features/organizerDashboard/finance/FinancialEntryForm.js"></script>
+<script src="src/features/organizerDashboard/finance/FinanceBookings.js"></script>
+<script src="src/features/organizerDashboard/finance/FinanceMetricBreakdown.js"></script>
 <script src="src/features/organizerDashboard/finance/TravellerPayments.js"></script>
 <script src="src/features/organizerDashboard/pages/RevenueFinancePage.js"></script>
 <script src="src/features/organizerDashboard/pages/TripWizard.js"></script>

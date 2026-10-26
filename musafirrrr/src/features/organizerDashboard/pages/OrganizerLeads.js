@@ -5,7 +5,7 @@
    ============================================================ */
 
 /** All leads. */
-function OrganizerLeads({ initialStatus } = {}) {
+function OrganizerLeads({ initialStatus, initialLead } = {}) {
     const { user: me } = useAuth();
     const org = me ? me.organizer : null;
     const orgId = org ? org.id : null;
@@ -20,6 +20,9 @@ function OrganizerLeads({ initialStatus } = {}) {
     const [notesLoading, setNotesLoading] = useState(false);
     const [notesError, setNotesError] = useState('');
     const [savingNoteId, setSavingNoteId] = useState(null);
+    const [notesRetry, setNotesRetry] = useState(0);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const noteMutation = useRef(false);
 
     useEffect(() => {
         setDrafts({});
@@ -47,10 +50,11 @@ function OrganizerLeads({ initialStatus } = {}) {
                 const saved = {};
                 (rows || []).forEach(row => {
                     saved[row.enquiry_id] = {
+                        updatedAt: row.updated_at,
                         notes: row.notes || '',
                         due: row.follow_up_date || '',
                         contacted: row.last_contacted_at
-                            ? new Date(row.last_contacted_at).toISOString().slice(0, 16)
+                            ? organizerLocalInput(row.last_contacted_at)
                             : ''
                     };
                 });
@@ -67,7 +71,7 @@ function OrganizerLeads({ initialStatus } = {}) {
             });
 
         return () => { cancelled = true; };
-    }, [orgId]);
+    }, [orgId, notesRetry]);
 
     if (!org)
         return React.createElement(EmptyState, { icon: "user", title: "Your community profile is missing", body: "We couldn't find your organizer profile. Please contact support." });
@@ -84,9 +88,9 @@ function OrganizerLeads({ initialStatus } = {}) {
     const now = new Date();
     const localDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const list = all.filter(e => {
-        const due = (drafts[e.id] || notesById[e.id] || {}).due || '';
+        const due = (notesById[e.id] || {}).due || '';
         const matchesFollowUp = followUp === 'ALL' || (followUp === 'NONE' ? !due : due && (followUp === 'OVERDUE' ? due < localDay : followUp === 'TODAY' ? due === localDay : due > localDay));
-        return (filter === 'ALL' || e.status === filter) && (tripFilter === 'ALL' || e.tripId === tripFilter) && matchesFollowUp && (!query || [e.name, e.email, e.phone, tripsById[e.tripId]?.title].some(value => String(value || '').toLowerCase().includes(query)));
+        return (!initialLead || e.id === initialLead) && (filter === 'ALL' || e.status === filter) && (tripFilter === 'ALL' || e.tripId === tripFilter) && matchesFollowUp && (!query || [e.name, e.email, e.phone, tripsById[e.tripId]?.title, notesById[e.id]?.notes].some(value => String(value || '').toLowerCase().includes(query)));
     }).sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) : (new Date(a.createdAtTimestamp || a.createdAt) - new Date(b.createdAtTimestamp || b.createdAt)) * (sort === 'oldest' ? 1 : -1));
     const clearFilters = () => { setSearch(''); setFilter('ALL'); setTripFilter('ALL'); setFollowUp('ALL'); setSort('newest'); };
 
@@ -113,43 +117,83 @@ function OrganizerLeads({ initialStatus } = {}) {
         }));
     };
 
-    const saveNotes = async (enquiryId) => {
-        if (!orgId || savingNoteId) return;
+    const saveNotes = async (enquiryId, complete = false) => {
+        if (!orgId || noteMutation.current) return;
+        noteMutation.current = true;
         const draft = drafts[enquiryId] || notesById[enquiryId] || {};
         setSavingNoteId(enquiryId);
         try {
+            const latest = (await organizerApi.getEnquiryNotes(orgId)).find(row => row.enquiry_id === enquiryId);
+            if ((latest?.updated_at || null) !== (notesById[enquiryId]?.updatedAt || null)) {
+                throw new Error('This lead’s notes changed in another session. Copy your draft, then reload before saving.');
+            }
             const saved = await organizerApi.saveEnquiryNotes(orgId, enquiryId, {
                 notes: draft.notes || '',
-                follow_up_date: draft.due || null,
-                last_contacted_at: draft.contacted
+                follow_up_date: complete ? null : draft.due || null,
+                last_contacted_at: complete ? new Date().toISOString() : draft.contacted
                     ? new Date(draft.contacted).toISOString()
                     : null
             });
             const normalized = {
+                updatedAt: saved.updated_at,
                 notes: saved.notes || '',
                 due: saved.follow_up_date || '',
                 contacted: saved.last_contacted_at
-                    ? new Date(saved.last_contacted_at).toISOString().slice(0, 16)
+                    ? organizerLocalInput(saved.last_contacted_at)
                     : ''
             };
             setNotesById(previous => ({ ...previous, [enquiryId]: normalized }));
             setDrafts(previous => ({ ...previous, [enquiryId]: normalized }));
             toast('Notes and follow-up saved.');
+            window.dispatchEvent(new Event('leads-changed'));
         } catch (err) {
             console.error('Could not save enquiry notes:', err);
             toast(err.message || 'Could not save notes. Please try again.', 'bad');
         } finally {
+            noteMutation.current = false;
+            setSavingNoteId(null);
+        }
+    };
+
+    const deleteNote = async () => {
+        if (!deleteTarget || noteMutation.current) return;
+        const id = deleteTarget.id;
+        noteMutation.current = true;
+        setSavingNoteId(id);
+        try {
+            await organizerApi.deleteEnquiryNotes(orgId, id, notesById[id]?.updatedAt);
+            const remove = previous => {
+                const next = { ...previous };
+                delete next[id];
+                return next;
+            };
+            setNotesById(remove);
+            setDrafts(remove);
+            window.dispatchEvent(new Event('leads-changed'));
+            toast('Note and follow-up deleted.');
+        } catch (err) {
+            toast(err.message || 'Could not delete the note. Please try again.', 'bad');
+        } finally {
+            noteMutation.current = false;
             setSavingNoteId(null);
         }
     };
 
     return React.createElement('div', { className: 'od-leads' },
+        React.createElement(Confirm, {
+            open: !!deleteTarget, title: 'Delete this note?',
+            body: `Are you sure you want to delete the saved note for ${deleteTarget?.name || 'this traveller'}? Its follow-up reminder and last-contacted record will also be removed. This cannot be undone. The lead itself will be kept.`,
+            confirmLabel: 'Yes, delete note', cancelLabel: 'Cancel', tone: 'danger',
+            onConfirm: deleteNote, onClose: () => setDeleteTarget(null)
+        }),
         React.createElement(SectionHead, { title: "Leads and enquiries", sub: "Every traveller who asked about one of your trips." }),
+        initialLead && React.createElement(Link, { to: '/organizer/leads' }, 'Back to all leads'),
         React.createElement('details', { className: 'od-crm-notice od-preview-help' },
             React.createElement('summary', null, 'About notes & follow-up'),
             React.createElement('p', null, 'Notes and follow-up dates are saved privately for your organizer account. Record contact yourself; opening a phone or messaging link does not confirm contact.')),
         notesLoading && React.createElement('p', { role: 'status', className: 'text-slatey mb-3' }, 'Loading saved notes…'),
         notesError && React.createElement('p', { role: 'alert', className: 'text-bad mb-3' }, 'Saved notes could not be loaded: ', notesError),
+        notesError && React.createElement(Btn, { onClick: () => setNotesRetry(value => value + 1), size: 'sm' }, 'Retry loading notes'),
         React.createElement("div", { className: "od-lead-filters od-lead-filters-simple" },
             React.createElement(Field, { label: "Find an enquiry" }, React.createElement(Input, { type: "search", value: search, onChange: e => setSearch(e.target.value), placeholder: "Search traveller, trip, email or phone" })),
             React.createElement('details', { className: 'od-extra-filters' },
@@ -175,11 +219,21 @@ function OrganizerLeads({ initialStatus } = {}) {
                     React.createElement("span", null, "CONTACT")),
                 list.map(e => React.createElement('div', { key: e.id, className: 'od-lead-record' },
                     React.createElement(LeadRow, { e, trip: tripsById[e.tripId] || null, orgName: org.name, onStatus: changeStatus }),
+                    React.createElement('div', { className: 'od-saved-note' },
+                        React.createElement('div', { className: 'od-saved-note__heading' },
+                            React.createElement('strong', null, 'Organizer notes · Private')),
+                        React.createElement('p', null, notesById[e.id]?.notes || 'No saved notes yet.'),
+                        notesById[e.id]?.due && React.createElement('p', null, organizerFollowUpLabel(notesById[e.id].due, localDay), ' · ', fmtLong(notesById[e.id].due)),
+                        notesById[e.id] && React.createElement('div', { className: 'od-saved-note__actions' },
+                            notesById[e.id]?.contacted && React.createElement('small', null, 'Last contacted: ', new Date(notesById[e.id].contacted).toLocaleString()),
+                            React.createElement(Btn, { size: 'sm', variant: 'danger', className: 'od-saved-note__delete', disabled: !!savingNoteId || notesLoading || !!notesError, onClick: () => setDeleteTarget(e) }, savingNoteId === e.id ? 'Please wait…' : 'Delete note'))),
                     React.createElement(LeadCrmPreview, {
                         enquiry: e,
                         trip: tripsById[e.tripId],
                         draft: drafts[e.id] || notesById[e.id] || {},
-                        saving: savingNoteId === e.id,
+                        saving: !!savingNoteId || notesLoading || !!notesError,
+                        initiallyOpen: !!initialLead,
+                        onComplete: notesById[e.id]?.due ? () => saveNotes(e.id, true) : null,
                         onChange: patch => updateDraft(e.id, patch),
                         onSave: () => saveNotes(e.id),
                         onClear: () => updateDraft(e.id, { notes: '', due: '', contacted: '' })
@@ -188,14 +242,14 @@ function OrganizerLeads({ initialStatus } = {}) {
 }
 
 /** Organizer-private notes and follow-up editor. */
-function LeadCrmPreview({ enquiry, trip, draft, saving, onChange, onSave, onClear }) {
+function LeadCrmPreview({ enquiry, trip, draft, saving, initiallyOpen, onComplete, onChange, onSave, onClear }) {
     const h = React.createElement;
     const phone = String(enquiry.phone || '').replace(/\D/g, '');
-    return h('details', { className: 'od-crm-preview' },
+    return h('details', { className: 'od-crm-preview', open: initiallyOpen || undefined },
         h('summary', null,
             h('span', null, 'Notes & follow-up'),
             h('span', { className: 'od-preview-label' }, 'Organizer private')),
-        h('div', { className: 'od-crm-body' },
+        h('fieldset', { className: 'od-crm-body', disabled: saving },
             h('div', { className: 'od-crm-context' },
                 h('span', null, 'Departure: ', trip?.startDate ? fmtLong(trip.startDate) : 'Not available'),
                 /^\d{10,15}$/.test(phone) && h('a', { href: 'tel:+' + (phone.length === 10 ? '91' + phone : phone), className: 'od-call-link' }, 'Call traveller')),
@@ -208,7 +262,8 @@ function LeadCrmPreview({ enquiry, trip, draft, saving, onChange, onSave, onClea
                     h(Field, { label: 'Last contacted', hint: 'Record contact yourself; opening a link does not confirm contact.' },
                         h(Input, { type: 'datetime-local', value: draft.contacted || '', onChange: e => onChange({ contacted: e.target.value }) }))),
             h('div', { className: 'od-crm-footer' },
-                h('p', null, 'Existing enquiry status meanings remain unchanged.'),
+                h('p', null, 'Complete follow-up records contact now and clears the reminder. Save a new date to reschedule.'),
+                onComplete && h(Btn, { size: 'sm', onClick: onComplete, disabled: saving }, 'Complete follow-up'),
                 h(Btn, { size: 'sm', onClick: onSave, disabled: saving }, saving ? 'Saving…' : 'Save notes'),
                 h(Btn, { size: 'sm', variant: 'ghost', onClick: onClear, disabled: saving }, 'Clear fields')))));
 }

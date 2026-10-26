@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const context = vm.createContext({ console, Intl, Date, crypto: require('node:crypto').webcrypto });
-for (const name of ['finance/finance.model.js', 'finance/FinancialEntryForm.js', 'finance/TravellerPayments.js', 'pages/RevenueFinancePage.js']) {
+for (const name of ['finance/finance.model.js', 'finance/FinancialEntryForm.js', 'finance/FinanceBookings.js', 'finance/FinanceMetricBreakdown.js', 'finance/TravellerPayments.js', 'pages/RevenueFinancePage.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'src/features/organizerDashboard', name), 'utf8'), context);
 }
 vm.runInContext(`
