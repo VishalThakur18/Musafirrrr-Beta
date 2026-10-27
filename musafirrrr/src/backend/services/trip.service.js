@@ -62,7 +62,9 @@ function dbToPublicOrganizer(o) {
         whatsapp: publicWa(o.whatsapp_number), instagram: o.instagram_handle || '',
         logo_url: o.logo_url || null, 
         banner_url: o.banner_url || null,
-        logoKind: 'mountains', logoSeed: 11
+        logoKind: 'mountains', logoSeed: 11,
+        rating: Number(o.rating) || 0,
+        ratingCount: o.rating_count || 0,
     };
 }
 
@@ -74,9 +76,6 @@ function publicTripFromRow(data) {
             .map((x, i) => ({ day: i + 1, title: x.title || '', detail: x.description || '' }));
         t.included = (data.trip_inclusions || []).filter(x => x.kind === 'included').map(x => x.item);
         t.excluded = (data.trip_inclusions || []).filter(x => x.kind === 'excluded').map(x => x.item);
-        const ratings = (data.reviews || []).map(r => r.rating).filter(n => typeof n === 'number');
-        t.reviews = ratings.length;
-        t.rating = ratings.length ? Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length * 10) / 10 : 0;
         t.startingFrom = data.starting_location || '';
         t.advance = data.advance_amount || 0;
         t.organizer = dbToPublicOrganizer(data.organizers);
@@ -95,7 +94,8 @@ async bySlug(slug) {
                 organizers(
                     id, slug, name, based_in, bio,
                     logo_url, whatsapp_number,
-                    instagram_handle, verified, years_active
+                    instagram_handle, verified, years_active,
+                    rating, rating_count
                 ),
                 trip_images(image_url, position),
                 itinerary_days(day_number, title, description),
@@ -138,7 +138,7 @@ async bySlug(slug) {
     async fetchOrganizerPage(slug) {
         const { data, error } = await window.sbClient
             .from('organizers')
-            .select('id, slug, name, based_in, bio, logo_url, banner_url, whatsapp_number, instagram_handle, verified, years_active, created_at')
+            .select('id, slug, name, based_in, bio, logo_url, banner_url, whatsapp_number, instagram_handle, verified, years_active, created_at, rating, rating_count')
             .eq('slug', slug)
             .maybeSingle();
         if (error)

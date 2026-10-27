@@ -9,6 +9,7 @@ function OrganizerPage({ slug }) {
     const s = useStore();
     const { loading, error, data, reload } = useAsync(() => tripApi.organizerPage(slug), [slug]);
     const [tab, setTab] = useState('upcoming');
+    const [loginOpen, setLoginOpen] = useState(false);
 
     // Real organizer first; the mock store is only a fallback until Explore and Home are converted
     const org = data ? data.org : organizerService.bySlug(slug);
@@ -54,8 +55,9 @@ function OrganizerPage({ slug }) {
                     React.createElement(OrgLogo, { org: org, size: 112 })),
                 React.createElement("div", { className: "flex-1 md:pt-[72px]" },
                     React.createElement("div", { className: "flex items-center gap-2.5 flex-wrap" },
-                        React.createElement("h1", { className: "text-[28px] sm:text-[36px] font-extrabold tracking-[-0.03em]" }, org.name),
-                        org.verified && React.createElement(Verified, { size: 15 })),
+                    React.createElement("h1", { className: "text-[28px] sm:text-[36px] font-extrabold tracking-[-0.03em]" }, org.name),
+                    org.verified && React.createElement(Verified, { size: 15 }),
+                    React.createElement(OrgRating, { org, size: 16 })),
                     subline && React.createElement("p", { className: "text-[14.5px] text-slatey mt-1" }, subline)),
                 React.createElement("div", { className: "flex gap-2.5 md:pt-[72px]" },
                     org.whatsapp && React.createElement(WhatsAppButton, { org: org, label: "WhatsApp", message: `Hi ${org.name}! I found you on Musafirrrr and wanted to ask about your upcoming trips.` }),
@@ -69,5 +71,8 @@ function OrganizerPage({ slug }) {
                 " ",
                 React.createElement("span", { className: "text-[13px] text-muted" }, n))))),
             React.createElement("div", { className: "mt-7" },
-                React.createElement(TripGrid, { trips: list, cols: "3", empty: React.createElement(EmptyState, { title: tab === 'upcoming' ? 'No upcoming trips right now' : 'No past trips on record', body: tab === 'upcoming' ? 'Follow them on Instagram to hear when the next one opens.' : 'Their completed trips will show up here.', action: org.instagram ? React.createElement(InstagramButton, { org: org }) : undefined }) })))));
+                React.createElement(TripGrid, { trips: list, cols: "3", empty: React.createElement(EmptyState, { title: tab === 'upcoming' ? 'No upcoming trips right now' : 'No past trips on record', body: tab === 'upcoming' ? 'Follow them on Instagram to hear when the next one opens.' : 'Their completed trips will show up here.', action: org.instagram ? React.createElement(InstagramButton, { org: org }) : undefined }) })),
+                React.createElement("section", { className: "mt-14 pb-16" },
+                React.createElement(ReviewsSection, { kind: "organizer", targetId: org.id, heading: "Reviews of " + org.name, open: all.some(t => t.endDate && t.endDate < reviewsToday()), onLogin: () => setLoginOpen(true), onChanged: reload }))),
+            React.createElement(LoginPrompt, { open: loginOpen, onClose: () => setLoginOpen(false), action: 'write a review' })));
 }

@@ -61,7 +61,7 @@ function HomePage() {
     const pub = tripService.published();
     // Include community uploads for every destination.
     const trending = [...pub]
-        .sort((a, b) => b.rating - a.rating || a.price - b.price).slice(0, 8);
+        .sort((a, b) => orgRating(b) - orgRating(a) || a.price - b.price).slice(0, 8);
     const soon = [...pub].filter(t => daysUntil(t.startDate) > 0).sort((a, b) => d(a.startDate) - d(b.startDate)).slice(0, 4);
     const dests = [['Manali', 'mountains', 1], ['Goa', 'beach', 2], ['Meghalaya', 'forest', 3], ['Kerala', 'backwater', 4], ['Rishikesh', 'valley', 5], ['Ladakh', 'mountains', 6], ['Kashmir', 'snow', 7], ['Spiti', 'mountains', 8], ['Jaisalmer', 'desert', 9]];
     return (React.createElement(React.Fragment, null,

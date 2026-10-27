@@ -46,7 +46,7 @@ const dataService = {
             do {
                 version = this.generation;
                 const { data, error } = await window.sbClient.from('trips')
-                    .select('*, organizers(id, slug, name, based_in, bio, logo_url, banner_url, whatsapp_number, instagram_handle, verified, years_active), trip_images(image_url, position), itinerary_days(day_number, title, description), trip_inclusions(item, kind)')
+                    .select('*, organizers(id, slug, name, based_in, bio, logo_url, banner_url, whatsapp_number, instagram_handle, verified, years_active, rating, rating_count), trip_images(image_url, position), itinerary_days(day_number, title, description), trip_inclusions(item, kind)')
                     .in('status', ['published', 'sold_out'])
                     .order('start_date', { ascending: true });
                 if (error) throw error;
