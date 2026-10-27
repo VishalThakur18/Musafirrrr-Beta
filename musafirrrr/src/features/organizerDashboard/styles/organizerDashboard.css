@@ -260,3 +260,41 @@
 .organizer-workspace .od-follow-ups__controls button:disabled { opacity: .35; cursor: not-allowed; }
 .organizer-workspace .od-follow-ups__controls button:focus-visible { outline: 2px solid #315746; outline-offset: 3px; }
 .organizer-workspace .od-follow-ups__list .od-reminder { min-height: 144px; }
+/* Shared organizer motion for explicitly enabled routes. Individual translate keeps card hover transforms independent. */
+.organizer-workspace .org-motion :is(.org-panel, .org-stat-grid > *) { animation: none; }
+.organizer-workspace .org-motion .od-reveal {
+  transition: opacity 520ms cubic-bezier(.22,1,.36,1) var(--od-delay, 0ms),
+    translate 520ms cubic-bezier(.22,1,.36,1) var(--od-delay, 0ms),
+    transform 400ms cubic-bezier(.22,1,.36,1), box-shadow 400ms cubic-bezier(.22,1,.36,1),
+    background-color 400ms cubic-bezier(.22,1,.36,1), border-color 400ms cubic-bezier(.22,1,.36,1);
+}
+.organizer-workspace .org-motion .od-reveal--pending { opacity: 0; translate: 0 15px; }
+.organizer-workspace .org-motion .od-reveal:focus-within { opacity: 1; translate: none; transition-delay: 0ms; }
+.organizer-workspace .org-motion .od-chart-track span {
+  transform-origin: left center;
+  transition: transform 560ms cubic-bezier(.22,1,.36,1) var(--od-delay, 0ms);
+}
+.organizer-workspace .org-motion .od-analytics-chart.od-reveal--pending .od-chart-track span { transform: scaleX(0); }
+.organizer-workspace .org-motion .trip-card,
+.organizer-workspace .org-motion .trip-card__photo img {
+  transition: transform 500ms cubic-bezier(.22,1,.36,1), box-shadow 400ms cubic-bezier(.22,1,.36,1);
+}
+.organizer-workspace:has(.org-motion) nav a {
+  transition: background-color 400ms cubic-bezier(.22,1,.36,1), color 400ms cubic-bezier(.22,1,.36,1), box-shadow 400ms cubic-bezier(.22,1,.36,1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .organizer-workspace .org-motion .org-stat-grid > :is(div, a):hover,
+  .organizer-workspace .org-motion :is(.org-trip-row, .finance-metric, .finance-trip):hover { transform: translateY(-2px); box-shadow: 0 6px 18px #31574618; }
+  .organizer-workspace .org-motion :is(.org-action-row, .org-departure, .org-lead-grid):hover { background-color: #31574606; }
+  .organizer-workspace .org-motion .trip-card:hover .trip-card__photo img { transform: scale(1.03); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .organizer-workspace .org-motion .od-reveal,
+  .organizer-workspace .org-motion .org-stat-grid > *,
+  .organizer-workspace .org-motion .trip-card,
+  .organizer-workspace .org-motion .trip-card__photo img,
+  .organizer-workspace .org-motion .od-chart-track span {
+    opacity: 1; translate: none; transform: none !important; transition: none !important; animation: none !important;
+  }
+  .organizer-workspace:has(.org-motion) nav a { transition: none; }
+}

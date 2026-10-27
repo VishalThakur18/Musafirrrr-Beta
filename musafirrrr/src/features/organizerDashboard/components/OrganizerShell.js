@@ -11,6 +11,9 @@ function OrganizerShell({ children }) {
     const orgId = org ? org.id : null;
     const [drawer, setDrawer] = useState(false);
     const drawerRef = useRef(null);
+    const motionRoot = useRef(null);
+    const motionEnabled = !!org && route !== '/organizer/dashboard' && !!ORGANIZER_MOTION_SELECTORS[route];
+    useOrganizerMotion(motionRoot, route, motionEnabled);
     useEffect(() => { setDrawer(false); }, [route]);
     useEffect(() => {
         if (!drawer) return;
@@ -89,7 +92,7 @@ function OrganizerShell({ children }) {
                     React.createElement("button", { onClick: logout, className: "org-logout-action mt-6" },
                         React.createElement(Icon, { name: "logout", size: 18 }),
                         "Log out"))),
-            React.createElement("main", { className: "org-content min-w-0", id: "organizer-content" }, children)),
+            React.createElement("main", { ref: motionRoot, className: cls("org-content min-w-0", motionEnabled && "org-motion"), id: "organizer-content" }, children)),
         drawer && (React.createElement("div", { className: "lg:hidden fixed inset-0 z-[95]" },
             React.createElement("div", { className: "absolute inset-0 bg-ink/45 fade-in", onClick: () => setDrawer(false) }),
             React.createElement("div", { ref: drawerRef, role: "dialog", "aria-modal": "true", "aria-label": "Organizer navigation", className: "absolute left-0 top-0 bottom-0 w-[82%] max-w-[320px] bg-white p-5 shadow-pop sheet-up overflow-y-auto", style: { paddingTop: 'calc(20px + env(safe-area-inset-top,0px))' } },

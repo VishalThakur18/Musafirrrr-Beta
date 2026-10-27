@@ -132,7 +132,7 @@ function ScrollRevealPage({ children, bare }) {
         }, { threshold: 0, rootMargin: '0px 0px -24px 0px' });
         const scan = () => {
             root.current?.querySelectorAll('main > section, main > article, .trip-card, [data-scroll-reveal]').forEach(el => {
-                if (seen.has(el)) return;
+                if (seen.has(el) || el.closest('.home-motion, .org-motion')) return;
                 seen.add(el);
                 if (!media.matches && el.getBoundingClientRect().top >= window.innerHeight) observer.observe(el);
             });
