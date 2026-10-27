@@ -229,6 +229,19 @@ const organizerApi = {
         return data || [];
     },
 
+    async deleteEnquiryNotes(organizerId, enquiryId, updatedAt) {
+        if (!organizerId || !enquiryId || !updatedAt) throw new Error('Reload the saved note before deleting it.');
+        const { data, error } = await window.sbClient
+            .from('organizer_enquiry_notes')
+            .delete()
+            .eq('organizer_id', organizerId)
+            .eq('enquiry_id', enquiryId)
+            .eq('updated_at', updatedAt)
+            .select('enquiry_id');
+        if (error) throw error;
+        if (!data || data.length !== 1) throw new Error('The note changed or could not be deleted. Reload and try again.');
+    },
+
     async saveEnquiryNotes(organizerId, enquiryId, payload) {
         const { data, error } = await window.sbClient
             .from("organizer_enquiry_notes")

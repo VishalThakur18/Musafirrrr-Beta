@@ -157,7 +157,7 @@ function OrganizerOverviewActions({ newCount, drafts, departures, leads, org }) 
             h(Link, { to: org.verified ? '/organizer/profile' : '/organizer/settings', className: 'org-action-row' },
                 h('span', { className: 'org-action-icon' }, h(Icon, { name: org.verified ? 'user' : 'shield', size: 20 })),
                 h('span', null, h('strong', null, org.verified ? 'Keep your community profile fresh' : 'Review community verification'), h('small', null, org.verified ? 'Update your story, photos and contact details.' : 'See requirements and your verification status.')), h(Icon, { name: 'arrow', size: 17 })),
-            h('p', { className: 'od-availability-note' }, 'Follow-up reminders will appear here once follow-up tracking is connected.')),
+            h(OrganizerFollowUps, { organizerId: org.id, leads })),
         h('section', { className: 'org-panel' },
             h('div', { className: 'org-panel__heading' }, h('h2', null, 'Next departures'), h(Link, { to: '/organizer/departures' }, 'Manage dates')),
             departures.length ? departures.map(t => h(Link, { key: t.id, to: '/organizer/edit/' + t.id, className: 'org-departure' },
@@ -166,4 +166,51 @@ function OrganizerOverviewActions({ newCount, drafts, departures, leads, org }) 
                 h(Icon, { name: 'chev', size: 16 }))) : h('div', { className: 'org-inline-empty' }, h(Icon, { name: 'cal', size: 26 }), h('p', null, 'Your next adventure starts here.'), h(Link, { to: '/organizer/create' }, 'Create an upcoming trip')),
             h('div', { className: 'org-pipeline' }, h('p', null, 'Enquiry overview'),
                 h('div', null, [['NEW','New'],['CONTACTED','Contacted'],['CONFIRMED','Confirmed'],['CANCELLED','Cancelled']].map(([status,label]) => h('div', { key: status }, h('strong', null, leads.filter(e => e.status === status).length), h('span', null, label)))))));
+}
+
+function organizerLocalInput(value) {
+    const date = value ? new Date(value) : new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function organizerFollowUpLabel(due, today) {
+    return due < today ? 'Overdue' : due === today ? 'Due today' : 'Upcoming';
+}
+
+function OrganizerFollowUps({ organizerId, leads }) {
+    const h = React.createElement;
+    const [slide, setSlide] = useState(0);
+    const { data, loading, error, reload } = useAsync(() => organizerApi.getEnquiryNotes(organizerId), [organizerId]);
+    useOrganizerLiveRefresh(organizerId, reload, loading);
+    const today = organizerLocalInput().slice(0, 10);
+    const byId = Object.fromEntries(leads.map(lead => [lead.id, lead]));
+    const reminders = (data || []).filter(note => note.follow_up_date && byId[note.enquiry_id] && byId[note.enquiry_id].status !== 'CANCELLED')
+        .sort((a, b) => a.follow_up_date.localeCompare(b.follow_up_date));
+    const currentSlide = Math.min(slide, Math.max(0, reminders.length - 1));
+    useEffect(() => { setSlide(0); }, [organizerId]);
+    useEffect(() => { setSlide(previous => Math.min(previous, Math.max(0, reminders.length - 1))); }, [reminders.length]);
+    return h('div', { className: 'od-follow-ups' },
+        h('div', { className: 'od-follow-ups__heading' },
+            h('h3', null, h(Icon, { name: 'cal', size: 18 }), 'Follow-up reminders'),
+            h(Link, { to: '/organizer/leads', className: 'od-follow-ups__manage' }, 'Manage follow-ups', h(Icon, { name: 'arrow', size: 14 }))),
+        loading && !data ? h('p', { role: 'status' }, 'Loading reminders…') :
+        error ? h('div', { role: 'alert' }, h('p', null, 'Could not load follow-up reminders.'), h(Btn, { onClick: reload, size: 'sm' }, 'Try again')) :
+        reminders.length ? h('div', null,
+            h('p', { className: 'od-follow-ups__summary' }, `${reminders.filter(note => note.follow_up_date <= today).length} due or overdue · ${reminders.length} scheduled`),
+            h('div', { className: 'od-follow-ups__list', role: 'region', 'aria-roledescription': 'carousel', 'aria-label': 'Follow-up reminders' }, reminders.slice(currentSlide, currentSlide + 1).map(note => h(Link, {
+                key: note.enquiry_id, to: '/organizer/leads?lead=' + encodeURIComponent(note.enquiry_id),
+                className: 'od-reminder', 'aria-label': 'Open follow-up for ' + byId[note.enquiry_id].name
+            },
+                h('span', { className: 'od-reminder__content' },
+                    h('strong', { className: 'od-reminder__name' }, byId[note.enquiry_id].name),
+                    h('span', { className: 'od-reminder__meta' },
+                        h('span', { className: 'od-reminder__badge', 'data-state': organizerFollowUpLabel(note.follow_up_date, today) }, organizerFollowUpLabel(note.follow_up_date, today)),
+                        h('time', { dateTime: note.follow_up_date }, fmtLong(note.follow_up_date))),
+                    note.notes && h('span', { className: 'od-reminder__note' }, h('span', { className: 'od-reminder__note-label' }, 'Note: '), note.notes)),
+                h('span', { className: 'od-reminder__arrow', 'aria-hidden': true }, h(Icon, { name: 'arrow', size: 18 }))))),
+            h('div', { className: 'od-follow-ups__controls' },
+                h('button', { type: 'button', 'aria-label': 'Previous follow-up', disabled: currentSlide === 0, onClick: () => setSlide(currentSlide - 1) }, '←'),
+                h('span', { role: 'status', 'aria-live': 'polite', 'aria-atomic': true }, `${currentSlide + 1} of ${reminders.length}`),
+                h('button', { type: 'button', 'aria-label': 'Next follow-up', disabled: currentSlide === reminders.length - 1, onClick: () => setSlide(currentSlide + 1) }, '→'))) :
+        h('p', { className: 'od-follow-ups__summary' }, 'No follow-ups scheduled. Set a next follow-up date on a lead to see a reminder here.'));
 }

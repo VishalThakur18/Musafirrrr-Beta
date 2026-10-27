@@ -10,7 +10,7 @@ const context = vm.createContext({
   store: { state, quiet(fn) { fn(state); } },
   publicTripFromRow: row => ({ ...row, fromDb: true }),
   window: { addEventListener() {}, sbClient: { from() {
-    const chain = { select() { return chain; }, in() { return chain; }, order() {
+    const chain = { select(columns) { assert.doesNotMatch(columns, /\breviews\s*\(/, 'No trip reviews relationship exists in the deployed schema'); return chain; }, in() { return chain; }, order() {
       calls++; return new Promise(resolve => queue.push(resolve));
     } }; return chain;
   } } }
