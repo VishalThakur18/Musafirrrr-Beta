@@ -103,49 +103,15 @@ function App() {
         s.tripsError && React.createElement("div", { role: "alert", className: "max-w-shell mx-auto px-5 py-4 text-sm" },
             s.trips.length ? "Trip updates are unavailable. Showing the last loaded results. " : "Trips could not be loaded. Please retry. ",
             React.createElement("button", { className: "underline font-semibold", onClick: () => dataService.loadIntoStore().catch(() => {}) }, "Retry")),
-        React.createElement(ScrollRevealPage, { key: hash, bare }, page),
+        React.createElement(ScrollRevealPage, { key: hash, bare, route: path }, page),
         !bare && React.createElement(Footer, null),
         !bare && React.createElement(MobileTabs, null),
         React.createElement(Toasts, null)));
 }
 
-/** Reveal below-the-fold content without intercepting native scrolling. */
-function ScrollRevealPage({ children, bare }) {
+/** One shared reveal lifecycle per route; specialized pages keep their own scope. */
+function ScrollRevealPage({ children, bare, route }) {
     const root = useRef(null);
-    useEffect(() => {
-        if (bare || !window.IntersectionObserver) return;
-        const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-        const seen = new WeakSet();
-        const animations = new Set();
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                observer.unobserve(entry.target);
-                if (media.matches || !entry.target.animate) return;
-                const animation = entry.target.animate([
-                    { opacity: .25, transform: 'translateY(18px)' },
-                    { opacity: 1, transform: 'translateY(0)' }
-                ], { duration: 650, easing: 'cubic-bezier(.2,.7,.2,1)' });
-                animations.add(animation);
-                animation.onfinish = () => animations.delete(animation);
-            });
-        }, { threshold: 0, rootMargin: '0px 0px -24px 0px' });
-        const scan = () => {
-            root.current?.querySelectorAll('main > section, main > article, .trip-card, [data-scroll-reveal]').forEach(el => {
-                if (seen.has(el) || el.closest('.home-motion, .org-motion')) return;
-                seen.add(el);
-                if (!media.matches && el.getBoundingClientRect().top >= window.innerHeight) observer.observe(el);
-            });
-        };
-        let frame = 0;
-        const mutations = new MutationObserver(() => {
-            if (!frame) frame = requestAnimationFrame(() => { frame = 0; scan(); });
-        });
-        scan();
-        mutations.observe(root.current, { childList: true, subtree: true });
-        const preference = () => { if (media.matches) { observer.disconnect(); animations.forEach(a => a.cancel()); animations.clear(); } };
-        media.addEventListener('change', preference);
-        return () => { observer.disconnect(); mutations.disconnect(); cancelAnimationFrame(frame); animations.forEach(a => a.cancel()); media.removeEventListener('change', preference); };
-    }, [bare]);
-    return React.createElement('div', { ref: root, className: bare ? 'auth-page' : 'fade-in' }, children);
+    useSiteMotion(root, route);
+    return React.createElement('div', { ref: root, className: cls('site-motion', bare && 'auth-page') }, children);
 }

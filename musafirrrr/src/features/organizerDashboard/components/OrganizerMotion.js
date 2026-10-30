@@ -30,10 +30,15 @@ function organizerRevealGroup(el) {
     return el.parentElement;
 }
 
+function organizerMotionSelector(route) {
+    return ORGANIZER_MOTION_SELECTORS[route] ||
+        (/^\/organizer\/edit\/[^/]+$/.test(route) ? ORGANIZER_MOTION_SELECTORS['/organizer/create'] : null);
+}
+
 function useOrganizerMotion(root, route, enabled = true) {
     useScrollReveal(root, {
-        selector: ORGANIZER_MOTION_SELECTORS[route] || '[data-no-organizer-motion]',
-        prefix: 'od', enabled: enabled && !!ORGANIZER_MOTION_SELECTORS[route],
+        selector: organizerMotionSelector(route) || '[data-no-organizer-motion]',
+        prefix: 'od', enabled: enabled && !!organizerMotionSelector(route),
         keyFor: organizerRevealKey, groupFor: organizerRevealGroup, visitKey: route,
         threshold: 0
     });

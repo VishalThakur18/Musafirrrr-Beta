@@ -12,7 +12,7 @@ function OrganizerShell({ children }) {
     const [drawer, setDrawer] = useState(false);
     const drawerRef = useRef(null);
     const motionRoot = useRef(null);
-    const motionEnabled = !!org && route !== '/organizer/dashboard' && !!ORGANIZER_MOTION_SELECTORS[route];
+    const motionEnabled = !!org && route !== '/organizer/dashboard' && !!organizerMotionSelector(route);
     useOrganizerMotion(motionRoot, route, motionEnabled);
     useEffect(() => { setDrawer(false); }, [route]);
     useEffect(() => {

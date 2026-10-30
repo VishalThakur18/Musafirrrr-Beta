@@ -1,7 +1,7 @@
 "use strict";
 
 /** Progressive enhancement: only observed elements are ever hidden. */
-function useScrollReveal(root, { selector, prefix, enabled = true, keyFor, groupFor, visitKey, threshold = 0.08 } = {}) {
+function useScrollReveal(root, { selector, prefix, enabled = true, keyFor, groupFor, visitKey, threshold = 0.08, shouldReveal } = {}) {
     useEffect(() => {
         const host = root.current;
         if (!enabled || !host || !window.IntersectionObserver) return;
@@ -33,6 +33,7 @@ function useScrollReveal(root, { selector, prefix, enabled = true, keyFor, group
                 seen.add(el);
                 // Forms in dialogs must remain immediate and viewport-positioned.
                 if (el.closest('[role="dialog"], [aria-modal="true"]')) return;
+                if (shouldReveal && !shouldReveal(el)) return;
                 el.classList.add(`${prefix}-reveal`);
                 if (media.matches || (keyFor && revealed.has(keyFor(el)))) return;
                 observer.observe(el);
@@ -65,6 +66,6 @@ function useScrollReveal(root, { selector, prefix, enabled = true, keyFor, group
                 el.style.removeProperty(`--${prefix}-delay`);
             });
         };
-    }, [root, selector, prefix, enabled, keyFor, groupFor, visitKey, threshold]);
+    }, [root, selector, prefix, enabled, keyFor, groupFor, visitKey, threshold, shouldReveal]);
 }
 
