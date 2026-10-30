@@ -15,11 +15,51 @@ const CATEGORY_PHOTOS = {
     'Solo Friendly': 'assets/images/categories/solo.jpg'
 };
 
+// Keep the shared heading's exact DOM and spacing, without affecting other pages.
+function HomeSectionHead(props) {
+    return React.cloneElement(SectionHead(props), { 'data-home-reveal': '' });
+}
+
 /** Home page hero. */
 function Hero() {
     const videoRef = useRef(null);
+    const heroRef = useRef(null);
     const [playing, setPlaying] = useState(false);
-    return (React.createElement("section", { className: "relative home-hero" },
+    useEffect(() => {
+        const media = window.matchMedia('(min-width: 768px) and (prefers-reduced-motion: no-preference)');
+        const hero = heroRef.current;
+        let frame = 0;
+        const update = () => {
+            frame = 0;
+            const rect = hero.getBoundingClientRect();
+            const progress = Math.max(0, Math.min(1, -rect.top / rect.height));
+            hero.style.setProperty('--hero-offset', `${progress * 24}px`);
+        };
+        const scroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+        const configure = () => {
+            window.removeEventListener('scroll', scroll);
+            window.removeEventListener('resize', scroll);
+            cancelAnimationFrame(frame);
+            frame = 0;
+            hero.classList.toggle('home-hero--parallax', media.matches);
+            if (media.matches) {
+                update();
+                window.addEventListener('scroll', scroll, { passive: true });
+                window.addEventListener('resize', scroll);
+            } else hero.style.removeProperty('--hero-offset');
+        };
+        configure();
+        media.addEventListener('change', configure);
+        return () => {
+            window.removeEventListener('scroll', scroll);
+            window.removeEventListener('resize', scroll);
+            media.removeEventListener('change', configure);
+            cancelAnimationFrame(frame);
+            hero.classList.remove('home-hero--parallax');
+            hero.style.removeProperty('--hero-offset');
+        };
+    }, []);
+    return (React.createElement("section", { ref: heroRef, className: "relative home-hero" },
         React.createElement("div", { className: "absolute inset-0 overflow-hidden" },
             React.createElement("video", { ref: videoRef, src: "assets/videos/home-hero.mp4", autoPlay: true, muted: true, loop: true, playsInline: true, preload: "metadata", poster: sceneURL('mountains', 9001), "aria-hidden": "true", tabIndex: -1, onPlay: () => setPlaying(true), onPause: () => setPlaying(false), className: "home-hero__video" }),
             React.createElement("div", { className: "home-hero__overlay" })),
@@ -44,7 +84,7 @@ function Hero() {
 
 /** Destination picture tile. */
 function DestinationTile({ name, kind, seed }) {
-    return (React.createElement("button", { onClick: () => go('/explore?q=' + encodeURIComponent(name)), className: "group relative w-[168px] sm:w-[200px] shrink-0 rounded-2xl overflow-hidden aspect-[3/4] text-left" },
+    return (React.createElement("button", { onClick: () => go('/explore?q=' + encodeURIComponent(name)), "data-home-reveal": "", className: "home-image-tile group relative w-[168px] sm:w-[200px] shrink-0 rounded-2xl overflow-hidden aspect-[3/4] text-left" },
         React.createElement("img", { ...responsivePhoto(destinationImage({ destination: name }) || sceneURL(kind, seed), 480, '(max-width: 639px) 168px, 200px'), alt: name, loading: "lazy", decoding: "async", className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
         React.createElement("span", { className: "absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/10 to-transparent" }),
         React.createElement("span", { className: "absolute left-4 right-4 bottom-4" },
@@ -56,6 +96,8 @@ function DestinationTile({ name, kind, seed }) {
 
 /** Home page (#/). */
 function HomePage() {
+    const motionRoot = useRef(null);
+    useScrollReveal(motionRoot, { selector: '[data-home-reveal], .trip-card', prefix: 'home' });
     const s = useStore();
     const loading = s.tripsLoading;
     const pub = tripService.published();
@@ -66,22 +108,22 @@ function HomePage() {
     const dests = [['Manali', 'mountains', 1], ['Goa', 'beach', 2], ['Meghalaya', 'forest', 3], ['Kerala', 'backwater', 4], ['Rishikesh', 'valley', 5], ['Ladakh', 'mountains', 6], ['Kashmir', 'snow', 7], ['Spiti', 'mountains', 8], ['Jaisalmer', 'desert', 9]];
     return (React.createElement(React.Fragment, null,
         React.createElement(Hero, null),
-        React.createElement("main", { className: "max-w-shell mx-auto px-5 lg:px-8" },
+        React.createElement("main", { ref: motionRoot, className: "home-motion max-w-shell mx-auto px-5 lg:px-8" },
             React.createElement("section", { className: "pt-14 md:pt-20" },
-                React.createElement(SectionHead, { title: "Trending this month", sub: "The trips travellers are saving and enquiring about right now.", action: React.createElement(Link, { to: "/explore", className: "hidden sm:inline-flex items-center gap-1.5 text-[14.5px] font-semibold hover:gap-2.5 transition-all" },
+                React.createElement(HomeSectionHead, { title: "Trending this month", sub: "The trips travellers are saving and enquiring about right now.", action: React.createElement(Link, { to: "/explore", className: "hidden sm:inline-flex items-center gap-1.5 text-[14.5px] font-semibold hover:gap-2.5 transition-all" },
                         "See all trips ",
                         React.createElement(Icon, { name: "chev", size: 16 })) }),
                 React.createElement(TripGrid, { trips: trending, loading: loading, error: s.tripsError, onRetry: () => dataService.loadIntoStore().catch(() => {}), cols: "4" }),
                 React.createElement("div", { className: "sm:hidden mt-6" },
                     React.createElement(Btn, { variant: "outline", className: "w-full", onClick: () => go('/explore') }, "See all trips"))),
             React.createElement("section", { className: "pt-16 md:pt-24" },
-                React.createElement(SectionHead, { title: "Popular destinations", sub: "Nine places Indian travel communities run the most trips to." }),
+                React.createElement(HomeSectionHead, { title: "Popular destinations", sub: "Nine places Indian travel communities run the most trips to." }),
                 React.createElement(ScrollRow, { label: "Popular destinations" }, dests.map(([n, k, i]) => React.createElement(DestinationTile, { key: n, name: n, kind: k, seed: 900 + i })))),
             React.createElement("section", { className: "pt-16 md:pt-24" },
-                React.createElement(SectionHead, { title: "Leaving soon", sub: "Trips starting in the next few weeks. Spots move fast on these." }),
+                React.createElement(HomeSectionHead, { title: "Leaving soon", sub: "Trips starting in the next few weeks. Spots move fast on these." }),
                 React.createElement(TripGrid, { trips: soon, loading: loading, error: s.tripsError, onRetry: () => dataService.loadIntoStore().catch(() => {}), cols: "4" })),
             React.createElement("section", { className: "pt-16 md:pt-24" },
-                React.createElement(SectionHead, { title: "Trips for every kind of traveller" }),
+                React.createElement(HomeSectionHead, { title: "Trips for every kind of traveller" }),
                 React.createElement(ScrollRow, { label: "Trips for every kind of traveller" }, [['Weekend escapes', 'Weekend', 'Three days, no leave needed.', 'valley', 21],
                     ['Backpacking', 'Backpacking', 'Long routes, small budgets.', 'mountains', 22],
                     ['Trekking', 'Trek', 'Guided climbs for first-timers too.', 'snow', 23],
@@ -92,7 +134,7 @@ function HomePage() {
                     ['Solo friendly', 'Solo Friendly', 'Come alone, leave with people.', 'desert', 28]
                 ].map(([title, val, sub, kind, seed]) => {
                     const isGroup = GROUPS.includes(val);
-                    return (React.createElement("button", { key: title, onClick: () => go('/explore?' + (isGroup ? 'group=' : 'cat=') + encodeURIComponent(val)), className: "group relative w-[168px] sm:w-[200px] shrink-0 rounded-2xl overflow-hidden aspect-[3/4] text-left" },
+                    return (React.createElement("button", { key: title, onClick: () => go('/explore?' + (isGroup ? 'group=' : 'cat=') + encodeURIComponent(val)), "data-home-reveal": "", className: "home-image-tile group relative w-[168px] sm:w-[200px] shrink-0 rounded-2xl overflow-hidden aspect-[3/4] text-left" },
                         React.createElement("img", { ...responsivePhoto(CATEGORY_PHOTOS[val] || sceneURL(kind, seed), 480, '(max-width: 639px) 50vw, 240px'), alt: "", loading: "lazy", decoding: "async", style: { objectPosition: val === 'Adventure' ? '70% center' : val === 'Trek' ? '35% center' : 'center' }, className: "absolute inset-0 w-full h-full object-cover transition-transform duration-[400ms] group-hover:scale-[1.06]" }),
                         React.createElement("span", { className: "absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent" }),
                         React.createElement("span", { className: "absolute left-4 right-4 bottom-4" },
@@ -101,11 +143,11 @@ function HomePage() {
                 }))),
             React.createElement("section", { className: "pt-16 md:pt-24" },
                 React.createElement("div", { className: "rounded-3xl bg-sand border border-line p-7 sm:p-12" },
-                    React.createElement(SectionHead, { title: "How Musafirrrr works", sub: "Three steps, no middlemen, no booking fee." }),
+                    React.createElement(HomeSectionHead, { title: "How Musafirrrr works", sub: "Three steps, no middlemen, no booking fee." }),
                     React.createElement("ol", { className: "grid gap-8 md:grid-cols-3 md:gap-12" }, [['Discover', 'Browse upcoming trips from travel communities across the country, all in one feed.'],
                         ['Choose', 'Compare destinations, dates, group type and price. Save the ones you like — no account needed.'],
                         ['Connect', 'Send an enquiry and talk to the organizer directly on WhatsApp. You book with them.']
-                    ].map(([t, b], i) => (React.createElement("li", { key: t, className: "relative" },
+                    ].map(([t, b], i) => (React.createElement("li", { key: t, "data-home-reveal": "", className: "relative" },
                         React.createElement("span", { className: "text-[13px] font-bold text-beige" },
                             "Step ",
                             i + 1),
@@ -116,7 +158,7 @@ function HomePage() {
                     ['wallet', 'Transparent pricing', 'Per-person price, inclusions and exclusions listed on every trip.'],
                     ['wa', 'Direct organizer contact', 'Talk to the person running the trip before you pay anything.'],
                     ['inbox', 'Enquiries, not spam', 'Your details go to one organizer — the one whose trip you picked.']
-                ].map(([ic, t, b]) => (React.createElement("div", { key: t, className: "rounded-2xl border border-line p-5" },
+                ].map(([ic, t, b]) => (React.createElement("div", { key: t, "data-home-reveal": "", className: "rounded-2xl border border-line p-5" },
                     React.createElement("span", { className: "inline-flex w-10 h-10 rounded-full bg-shell text-earth items-center justify-center" },
                         React.createElement(Icon, { name: ic, size: 19 })),
                     React.createElement("h3", { className: "mt-3.5 font-bold text-[15.5px] tracking-tight" }, t),
@@ -126,10 +168,10 @@ function HomePage() {
                     React.createElement("img", { src: sceneURL('desert', 4242), alt: "", className: "absolute inset-0 w-full h-full object-cover" }),
                     React.createElement("div", { className: "absolute inset-0 bg-ink/72" }),
                     React.createElement("div", { className: "relative p-8 sm:p-14 text-white max-w-2xl" },
-                        React.createElement("p", { className: "text-beige text-[13px] font-bold tracking-[.14em]" }, "FOR TRAVEL COMMUNITIES"),
-                        React.createElement("h2", { className: "mt-3 text-[32px] sm:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.02]" }, "Turn your trips into bookings."),
-                        React.createElement("p", { className: "mt-4 text-white/80 text-[16.5px] leading-relaxed" }, "List your upcoming trips, get enquiries with phone numbers attached, and close them on WhatsApp. No commission on your bookings."),
-                        React.createElement("div", { className: "mt-7 flex flex-col sm:flex-row gap-3" },
+                        React.createElement("p", { "data-home-reveal": "", className: "text-beige text-[13px] font-bold tracking-[.14em]" }, "FOR TRAVEL COMMUNITIES"),
+                        React.createElement("h2", { "data-home-reveal": "", className: "mt-3 text-[32px] sm:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.02]" }, "Turn your trips into bookings."),
+                        React.createElement("p", { "data-home-reveal": "", className: "mt-4 text-white/80 text-[16.5px] leading-relaxed" }, "List your upcoming trips, get enquiries with phone numbers attached, and close them on WhatsApp. No commission on your bookings."),
+                        React.createElement("div", { "data-home-reveal": "", "data-home-delay": "160", className: "mt-7 flex flex-col sm:flex-row gap-3" },
                             React.createElement(Btn, { variant: "beige", size: "lg", onClick: () => go('/signup?role=ORGANIZER') }, "List your trip"),
                             React.createElement(
     Btn,

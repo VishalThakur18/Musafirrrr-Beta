@@ -16,7 +16,7 @@ function Stat({ label, value, sub, icon, to }) {
 
 /** Section heading with optional action. */
 function SectionHead({ title, sub, action }) {
-    return (React.createElement("div", { className: "flex items-end justify-between gap-6 mb-6" },
+    return (React.createElement("div", { 'data-scroll-reveal': '', className: "flex items-end justify-between gap-6 mb-6" },
         React.createElement("div", null,
             React.createElement("h2", { className: "text-[26px] sm:text-[32px] font-extrabold tracking-[-0.02em] leading-tight" }, title),
             sub && React.createElement("p", { className: "mt-1.5 text-[15px] text-slatey max-w-xl leading-relaxed" }, sub)),

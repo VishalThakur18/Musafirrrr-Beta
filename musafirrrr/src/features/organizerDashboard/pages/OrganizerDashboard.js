@@ -4,6 +4,7 @@
    ============================================================ */
 
 function OrganizerDashboard() {
+    const motionRoot = useRef(null);
     const { user: me } = useAuth();
     const org = me ? me.organizer : null;
     const orgId = org ? org.id : null;
@@ -15,6 +16,7 @@ function OrganizerDashboard() {
         [orgId], { keepPreviousData: true }
     );
     useOrganizerLiveRefresh(orgId, reload, loading);
+    useOrganizerMotion(motionRoot, '/organizer/dashboard', !!(org && data));
     // Warm analytics in parallel with trips/enquiries. The panel shares this request.
     useEffect(() => { if (orgId) void tripAnalytics.report(orgId, 30).catch(() => {}); }, [orgId]);
 
@@ -52,7 +54,7 @@ function OrganizerDashboard() {
         }
     };
 
-    return (React.createElement('div', { className: 'od-overview' },
+    return (React.createElement('div', { ref: motionRoot, className: 'od-overview org-motion' },
         React.createElement("div", { className: "org-overview-hero" },
             React.createElement("div", null,
                 React.createElement('span', { className: 'od-kicker' }, 'YOUR COMMUNITY AT A GLANCE'),

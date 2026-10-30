@@ -335,6 +335,7 @@ function EnquiryRowTraveller({ e, t }) {
     return React.createElement(
         "div",
         {
+            "data-scroll-reveal": "", "data-motion-key": "enquiry:" + e.id,
             className:
                 "rounded-2xl border border-line p-4 flex gap-4"
         },
