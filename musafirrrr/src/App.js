@@ -45,6 +45,9 @@ function App() {
             if (o)
                 setMeta(`${o.name} — group trips on Musafirrrr`, `${o.bio.slice(0, 150)} See upcoming trips from ${o.name}, based in ${o.city}.`);
         }
+        else if (path === '/compare') {
+            setMeta('Compare trips | Musafirrrr', 'Compare trip destinations, prices, itineraries and organizers side by side.');
+        }
         else if (path === '/explore') {
             setMeta('Explore group trips across India | Musafirrrr', 'Search upcoming group trips by destination, dates, budget, trip type and group type.');
         }
@@ -57,6 +60,8 @@ function App() {
         page = React.createElement(HomePage, null);
     else if (path === '/explore')
         page = React.createElement(ExplorePage, { params: params });
+    else if (path === '/compare')
+        page = React.createElement(ComparePage, null);
     else if (parts[0] === 'trip')
         page = React.createElement(TripDetailPage, { slug: parts[1] });
     else if (parts[0] === 'o')
@@ -98,14 +103,16 @@ function App() {
         page = (React.createElement("main", { className: "max-w-shell mx-auto px-5 py-24" },
             React.createElement(EmptyState, { icon: "compass", title: "This page doesn't exist", body: "The link may be old or mistyped. Everything live is on the explore page.", action: React.createElement(Btn, { onClick: () => go('/explore') }, "Explore trips") })));
     const bare = path === '/login' || path === '/signup';
-    return (React.createElement(React.Fragment, null,
+    return (React.createElement(CompareProvider, null,
         !bare && React.createElement(Navbar, null),
+        React.createElement(CompareSyncStatus, { path }),
         s.tripsError && React.createElement("div", { role: "alert", className: "max-w-shell mx-auto px-5 py-4 text-sm" },
             s.trips.length ? "Trip updates are unavailable. Showing the last loaded results. " : "Trips could not be loaded. Please retry. ",
             React.createElement("button", { className: "underline font-semibold", onClick: () => dataService.loadIntoStore().catch(() => {}) }, "Retry")),
         React.createElement(ScrollRevealPage, { key: hash, bare, route: path }, page),
         !bare && React.createElement(Footer, null),
         !bare && React.createElement(MobileTabs, null),
+        React.createElement(CompareTray, { path }),
         React.createElement(Toasts, null)));
 }
 

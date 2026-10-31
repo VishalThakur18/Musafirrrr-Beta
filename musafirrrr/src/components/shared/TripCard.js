@@ -55,9 +55,8 @@ function TripCard({ trip, priority = false }) {
         },
 
         React.createElement(
-            Link,
+            "div",
             {
-                to: '/trip/' + trip.slug,
                 className: "trip-card__link"
             },
 
@@ -145,7 +144,7 @@ function TripCard({ trip, priority = false }) {
                 React.createElement(
                     "h3",
                     { title: trip.title },
-                    trip.title
+                    React.createElement(Link, { to: '/trip/' + trip.slug, className: "trip-card__navigation" }, trip.title)
                 ),
 
                 React.createElement(
@@ -181,7 +180,7 @@ function TripCard({ trip, priority = false }) {
                     { className: "trip-card__dates" },
                     dateRange(trip.startDate, trip.endDate),
                     " · ",
-                    dur(trip)
+                    React.createElement("span", { className: "trip-card__duration" }, dur(trip))
                 ),
 
                 React.createElement(
@@ -205,11 +204,7 @@ function TripCard({ trip, priority = false }) {
                         )
                     ),
 
-                    React.createElement(
-                        "span",
-                        { className: "trip-card__duration" },
-                        dur(trip)
-                    )
+                    React.createElement(CompareButton, { trip })
                 ),
 
                 React.createElement(
