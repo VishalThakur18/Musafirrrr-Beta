@@ -102,6 +102,11 @@ function App() {
     else
         page = (React.createElement("main", { className: "max-w-shell mx-auto px-5 py-24" },
             React.createElement(EmptyState, { icon: "compass", title: "This page doesn't exist", body: "The link may be old or mistyped. Everything live is on the explore page.", action: React.createElement(Btn, { onClick: () => go('/explore') }, "Explore trips") })));
+    useEffect(() => {
+        if (ready && !((path === '/login' || path === '/signup') && me)) {
+            window.appStartup.finish();
+        }
+    }, [ready, path, me?.id]);
     const bare = path === '/login' || path === '/signup';
     return (React.createElement(CompareProvider, null,
         !bare && React.createElement(Navbar, null),

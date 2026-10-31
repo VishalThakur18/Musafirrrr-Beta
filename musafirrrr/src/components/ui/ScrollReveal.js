@@ -35,7 +35,9 @@ function useScrollReveal(root, { selector, prefix, enabled = true, keyFor, group
                 if (el.closest('[role="dialog"], [aria-modal="true"]')) return;
                 if (shouldReveal && !shouldReveal(el)) return;
                 el.classList.add(`${prefix}-reveal`);
-                if (media.matches || (keyFor && revealed.has(keyFor(el)))) return;
+                const bounds = el.getBoundingClientRect();
+                const visibleAtStartup = document.body.classList.contains('is-booting') && bounds.top < window.innerHeight && bounds.bottom > 0;
+                if (media.matches || visibleAtStartup || (keyFor && revealed.has(keyFor(el)))) return;
                 observer.observe(el);
                 el.classList.add(`${prefix}-reveal--pending`);
             });

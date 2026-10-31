@@ -123,6 +123,7 @@ function TravellerDashboard() {
             { className: "flex items-center gap-4" },
 
             React.createElement(Avatar, {
+                src: me.avatarUrl,
                 kind: me.avatarKind || 'valley',
                 seed: me.avatarSeed || 5,
                 size: 56,

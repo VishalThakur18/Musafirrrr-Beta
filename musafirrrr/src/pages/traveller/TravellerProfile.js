@@ -158,7 +158,7 @@ function TravellerProfile() {
         // Permit selecting the same file again.
         event.target.value = "";
 
-        if (!file) return;
+        if (!file || uploadingPhoto) return;
 
         setPhotoError("");
 
@@ -173,8 +173,8 @@ function TravellerProfile() {
             return;
         }
 
-        if (file.size > 2 * 1024 * 1024) {
-            setPhotoError("Your photo must be 2 MB or smaller.");
+        if (file.size > 10 * 1024 * 1024) {
+            setPhotoError("Choose a photo that is 10 MB or smaller.");
             return;
         }
 
@@ -187,6 +187,7 @@ function TravellerProfile() {
 
         let uploadedPath = null;
         let uploadClient = null;
+        let photoLinked = false;
 
         try {
             const sb = window.sbClient;
@@ -209,6 +210,11 @@ function TravellerProfile() {
                 );
             }
 
+            const image = await optimizeTripPhoto(file);
+            if (image.size > 2 * 1024 * 1024) {
+                throw new Error("Your photo is still over 2 MB after compression. Choose a smaller image.");
+            }
+
             const extensionByType = {
                 "image/jpeg": "jpg",
                 "image/png": "png",
@@ -224,15 +230,15 @@ function TravellerProfile() {
             // Each upload gets a unique path, avoiding overwrite permission.
             const filePath =
                 `${me.id}/${window.crypto.randomUUID()}.` +
-                extensionByType[file.type];
+                extensionByType[image.type];
 
             uploadClient = sb;
             uploadedPath = filePath;
 
             const { error: uploadError } = await sb.storage
                 .from("profile-photos")
-                .upload(filePath, file, {
-                    contentType: file.type,
+                .upload(filePath, image, {
+                    contentType: image.type,
                     cacheControl: "3600",
                     upsert: false
                 });
@@ -259,6 +265,8 @@ function TravellerProfile() {
 
             if (profileError) throw profileError;
 
+            photoLinked = true;
+
             // Reload the saved profile and update shared authentication state.
             const updatedUser = await window.getCurrentUser();
             await window.refreshAuth(updatedUser);
@@ -271,7 +279,7 @@ function TravellerProfile() {
             // newly uploaded object to avoid leaving an unused image.
             // This cleanup may fail because the current policy grants
             // INSERT only. That is safe; the error is logged separately.
-            if (uploadedPath && uploadClient) {
+            if (uploadedPath && uploadClient && !photoLinked) {
                 try {
                     const { error: cleanupError } = await uploadClient.storage
                         .from("profile-photos")
@@ -321,48 +329,41 @@ function TravellerProfile() {
         "main",
         {
             className:
-                "max-w-3xl mx-auto px-5 lg:px-8 py-10 md:py-14 pb-28 md:pb-14"
+                "consistent-page traveller-profile max-w-shell mx-auto px-5 lg:px-8 py-10 md:py-14 pb-28 md:pb-14"
         },
 
-        React.createElement(SectionHead, {
-            title: "Your profile",
-            sub: "Used to pre-fill enquiries and shape what we recommend."
-        }),
+        React.createElement("header", { className: "profile-page-heading" },
+            React.createElement("div", null,
+                React.createElement("p", { className: "profile-eyebrow" }, "YOUR ACCOUNT"),
+                React.createElement("h1", null, "A little about you"),
+                React.createElement("p", { className: "profile-page-description" }, "Your details, your travel style, your next adventure.")),
+            React.createElement(Btn, { variant: "outline", onClick: () => go('/traveller/dashboard') }, "My trips")),
 
         React.createElement(
             "form",
             {
                 onSubmit: save,
-                className: "space-y-8"
+                className: "traveller-profile-form"
             },
 
             // Profile information.
             React.createElement(
                 "div",
-                { className: "rounded-2xl border border-line p-6" },
+                { className: "page-card profile-details-card p-6" },
+                React.createElement("h2", { className: "profile-section-title" }, "Personal details"),
+                React.createElement("p", { className: "profile-section-description" }, "Make your profile feel like you. These details also pre-fill your enquiries."),
 
                 React.createElement(
                     "div",
-                    { className: "flex items-center gap-4" },
+                    { className: "profile-photo-row" },
 
-                    // Display the uploaded photo, or the existing fallback avatar.
-                    me.avatarUrl
-                        ? React.createElement("img", {
-                            key: me.avatarUrl,
-                            src: me.avatarUrl,
-                            alt: "Profile photo",
-                            className:
-                                "w-16 h-16 rounded-full object-cover shrink-0",
-                            onError: (event) => {
-                                event.currentTarget.style.display = "none";
-                            }
-                        })
-                        : React.createElement(Avatar, {
-                            kind: me.avatarKind || "valley",
-                            seed: me.avatarSeed || 5,
-                            size: 64,
-                            name: f.name || me.name
-                        }),
+                    React.createElement(Avatar, {
+                        src: me.avatarUrl,
+                        kind: me.avatarKind || "valley",
+                        seed: me.avatarSeed || 5,
+                        size: 80,
+                        name: f.name || me.name
+                    }),
 
                     React.createElement(
                         "div",
@@ -381,17 +382,17 @@ function TravellerProfile() {
                         ),
 
                         React.createElement(
-                            "button",
+                            Btn,
                             {
+                                variant: "outline",
+                                size: "sm",
                                 type: "button",
                                 disabled: uploadingPhoto,
                                 onClick: () => {
                                     fileInputRef.current?.click();
                                 },
                                 className:
-                                    "text-[13.5px] font-semibold underline " +
-                                    "underline-offset-4 disabled:opacity-50 " +
-                                    "disabled:cursor-not-allowed"
+                                    "shrink-0"
                             },
                             uploadingPhoto
                                 ? "Uploading photo..."
@@ -403,7 +404,7 @@ function TravellerProfile() {
                             {
                                 className: "text-[12.5px] text-muted mt-1"
                             },
-                            "JPG, PNG, or WebP · Maximum 2 MB"
+                            "JPG, PNG, or WebP · Up to 10 MB; compressed automatically"
                         ),
 
                         photoError && React.createElement(
@@ -477,7 +478,7 @@ function TravellerProfile() {
             // Travel preferences.
             React.createElement(
                 "div",
-                { className: "rounded-2xl border border-line p-6" },
+                { className: "page-card profile-preferences-card p-6" },
 
                 React.createElement(
                     "h2",
@@ -486,6 +487,7 @@ function TravellerProfile() {
                     },
                     "Travel preferences"
                 ),
+                React.createElement("p", { className: "profile-section-description" }, "Tell us what you love. We will help you find trips that fit."),
 
                 React.createElement(
                     "div",
@@ -614,7 +616,7 @@ function TravellerProfile() {
                 "p",
                 {
                     role: "alert",
-                    className: "text-sm text-red-600"
+                    className: "profile-save-error text-sm text-red-600"
                 },
                 saveError
             ),
@@ -622,7 +624,7 @@ function TravellerProfile() {
             // Form actions.
             React.createElement(
                 "div",
-                { className: "flex flex-wrap gap-3" },
+                { className: "profile-form-actions" },
 
                 React.createElement(
                     Btn,
@@ -640,6 +642,7 @@ function TravellerProfile() {
                     {
                         type: "button",
                         variant: "outline",
+                        className: "account-logout-action",
                         size: "lg",
                         icon: "logout",
                         onClick: async () => {
@@ -658,6 +661,8 @@ function TravellerProfile() {
                     "Log out"
                 )
             )
-        )
+        ),
+        React.createElement("section", { className: "profile-security", "aria-label": "Account security" },
+            React.createElement(PasswordCard, { me: me }))
     );
 }

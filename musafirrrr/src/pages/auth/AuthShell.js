@@ -68,7 +68,7 @@ const TRAVELLER_AUTH_SLIDES = [
 
 // Reuse the same cards on signup and interleave both audiences on login.
 const ALL_AUTH_SLIDES = TRAVELLER_AUTH_SLIDES.flatMap((item, index) => [item, COMMUNITY_AUTH_SLIDES[index]]);
-function AuthIntroSlideshow({ audience = 'traveller' }) {
+function AuthIntroSlideshow({ audience = 'traveller', backgroundOnly = false }) {
     const [slide, setSlide] = useState(0);
     const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const slides = audience === 'all' ? ALL_AUTH_SLIDES : audience === 'community' ? COMMUNITY_AUTH_SLIDES : TRAVELLER_AUTH_SLIDES;
@@ -86,7 +86,7 @@ function AuthIntroSlideshow({ audience = 'traveller' }) {
         return () => window.clearInterval(timer);
     }, [slide, reducedMotion, slides.length]);
     return React.createElement('aside', {
-        className: 'traveller-slideshow', 'aria-label': audience === 'community' ? 'Grow your travel community with Musafirrrr' : 'Why travel with Musafirrrr', 'aria-roledescription': 'carousel'
+        className: 'traveller-slideshow' + (backgroundOnly ? ' community-hero-slideshow' : ''), 'aria-label': audience === 'community' ? 'Grow your travel community with Musafirrrr' : 'Why travel with Musafirrrr', 'aria-roledescription': 'carousel'
     },
         React.createElement('div', { className: 'traveller-slideshow__card' },
             slides.map((item, index) => React.createElement('section', {
@@ -95,8 +95,8 @@ function AuthIntroSlideshow({ audience = 'traveller' }) {
             },
                 React.createElement('img', { src: 'assets/images/' + item.image, alt: '', className: 'traveller-slideshow__image' }),
                 React.createElement('div', { className: 'traveller-slideshow__shade' }),
-                React.createElement('span', { className: 'traveller-slideshow__location' }, React.createElement(Icon, { name: 'map', size: 15 }), item.place),
-                React.createElement('div', { className: 'traveller-slideshow__copy' },
+                !backgroundOnly && React.createElement('span', { className: 'traveller-slideshow__location' }, React.createElement(Icon, { name: 'map', size: 15 }), item.place),
+                !backgroundOnly && React.createElement('div', { className: 'traveller-slideshow__copy' },
                     React.createElement('span', { className: 'traveller-slideshow__eyebrow' }, item.eyebrow),
                     React.createElement('h2', null, item.title),
                     React.createElement('p', null, item.description)))),

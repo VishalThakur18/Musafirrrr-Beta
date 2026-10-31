@@ -6,6 +6,20 @@
 <title>Musafirrrr — All group trips. One place.</title>
 <meta name="description" content="Discover upcoming group trips from trusted travel communities and organizers across India. Search by destination, dates and budget, then connect directly with the organizer." />
 
+<style>
+#boot-loader { position:fixed; inset:0; z-index:99999; display:grid; place-content:center; justify-items:center; gap:16px; background:#f5f5f5; color:#132025; opacity:1; transition:opacity .65s cubic-bezier(.22,1,.36,1); }
+#boot-loader.is-leaving { opacity:0; }
+#boot-loader[hidden] { display:none; }
+#boot-loader img { width:clamp(220px, 50vw, 360px); height:clamp(220px, 50vw, 360px); object-fit:contain; }
+#boot-loader strong { font-family:"Caveat",cursive; font-size:48px; font-weight:700; }
+#boot-loader p, #boot-loader button { font:14px system-ui,sans-serif; }
+#boot-loader button { padding:12px 24px; border:1px solid #e5ded5; border-radius:24px; background:white; cursor:pointer; }
+html { scrollbar-gutter:stable; }
+body.is-booting { overflow:hidden; }
+body.is-booting #root { opacity:0; }
+body.is-booting.is-revealing #root { opacity:1; }
+@media(prefers-reduced-motion:reduce) { #root, #boot-loader { transition:none; } }
+</style>
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,12 +37,20 @@
 <link rel="stylesheet" href="src/features/organizerDashboard/styles/finance.css">
 
 <!-- Tailwind (CDN) + our theme config (config must come right after the CDN script) -->
+
+</head>
+<body class="is-booting">
+<div id="boot-loader" role="status" aria-live="polite">
+<img src="assets/videos/loder.svg" alt="" onerror="this.hidden=true">
+<strong>Musafiirrrr</strong>
+<p id="boot-message">Getting your next adventure ready?</p>
+<button id="boot-retry" type="button" hidden onclick="location.reload()">Try again</button>
+</div>
+<script src="src/core/startup.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="src/config/tailwind.config.js"></script>
-</head>
-<body>
 <!-- React mounts here -->
-<div id="root"></div>
+<div id="root" inert aria-busy="true"></div>
 
 <!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
@@ -106,6 +128,8 @@
 <script src="src/components/shared/TripCard.js?v=20261027-trip-loading-1"></script>
 <script src="src/components/shared/ContactButtons.js"></script>
 <script src="src/components/shared/SearchBar.js"></script>
+
+<script src="src/components/shared/PasswordCard.js"></script>
 
 <!-- 6c. LAYOUT COMPONENTS -->
 <script src="src/components/layout/Logo.js"></script>

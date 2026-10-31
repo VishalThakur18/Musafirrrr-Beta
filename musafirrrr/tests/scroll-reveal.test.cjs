@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../src/components/ui/ScrollReveal.js'), 'utf8');
 
-function mount({ available = true, reduced = false, enabled = true } = {}) {
+function mount({ available = true, reduced = false, enabled = true, booting = false } = {}) {
     const nodes = [], observed = new Set(), listeners = new Map();
     let effect, onIntersection, onMutation, preference, disconnected = false;
     const media = { matches: reduced, addEventListener(_, fn) { preference = fn; }, removeEventListener() { preference = null; } };
@@ -20,7 +20,7 @@ function mount({ available = true, reduced = false, enabled = true } = {}) {
         unobserve(el) { observed.delete(el); }
         disconnect() { observed.clear(); }
     }
-    const context = { useEffect(fn) { effect = fn; }, window: { IntersectionObserver: available ? Observer : undefined, matchMedia: () => media },
+    const context = { useEffect(fn) { effect = fn; }, document: { body: { classList: { contains: () => booting } } }, window: { innerHeight: 800, IntersectionObserver: available ? Observer : undefined, matchMedia: () => media },
         IntersectionObserver: Observer, MutationObserver: class {
             constructor(fn) { onMutation = fn; }
             observe() {}
@@ -31,7 +31,7 @@ function mount({ available = true, reduced = false, enabled = true } = {}) {
     const group = { closest() { return null; } };
     function add(key, parentElement = group) {
         const classes = new Set(), styles = new Map();
-        const el = { key, parentElement,
+        const el = { key, parentElement, getBoundingClientRect() { return { top: 100, bottom: 300 }; },
             classList: { add(...names) { names.forEach(n => classes.add(n)); }, remove(...names) { names.forEach(n => classes.delete(n)); }, contains(n) { return classes.has(n); } },
             style: { setProperty(k, v) { styles.set(k, v); }, removeProperty(k) { styles.delete(k); } },
             getAttribute() { return null; }, closest(selector) { return selector.startsWith('.') || el.dialog ? el : null; }, styles
@@ -90,3 +90,8 @@ const visit = mount();
 assert.equal(visit.observed.size, 2, 'new visits start a fresh reveal lifecycle');
 visit.cleanup();
 console.log('PASS: stagger, async insertion, once-per-visit keys, reduced motion, missing observer, delayed mount and cleanup');
+
+const startup = mount({ booting: true });
+assert.equal(startup.observed.size, 0, 'Visible startup content should not animate again after the loader');
+assert.equal(startup.first.classList.contains('test-reveal--pending'), false);
+startup.cleanup();

@@ -61,8 +61,9 @@ function useAuth() {
 }
 
 // Initial load, then follow Supabase auth events
-refreshAuth();
+window.authBooting = true;
 window.sbClient.auth.onAuthStateChange((event, session) => {
+    if (window.authBooting) return;
     if (event === "SIGNED_IN" && session?.user?.id === authState.user?.id) return;
     if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         setTimeout(async () => {

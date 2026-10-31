@@ -21,6 +21,7 @@ function LoginPage({ params }) {
             return;
         }
         setBusy(true);
+        window.appStartup.begin();
         try {
             const u = await authService.login(email, pw);
             const first = String(u.name || '').trim().split(' ')[0];
@@ -28,6 +29,7 @@ function LoginPage({ params }) {
             go(u.role === 'ORGANIZER' ? '/organizer/dashboard' : '/traveller/dashboard');
         }
         catch (x) {
+            window.appStartup.finish();
             setErr(x.message || 'Could not log in. Try again.');
             setNeedsConfirm(x.code === 'email_not_confirmed');
         }

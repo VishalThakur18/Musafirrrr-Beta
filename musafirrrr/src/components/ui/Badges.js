@@ -17,10 +17,10 @@ function Verified({ size = 13 }) {
         " Verified");
 }
 
-/** Round generated avatar. */
-function Avatar({ kind = 'valley', seed = 1, size = 40, name = '', className }) {
+/** Round avatar with an optional uploaded photo and generated fallback. */
+function Avatar({ kind = 'valley', seed = 1, size = 40, name = '', className, src }) {
     return React.createElement("span", { className: cls('inline-block rounded-full overflow-hidden bg-shell shrink-0 ring-1 ring-line', className), style: { width: size, height: size } },
-        React.createElement("img", { src: sceneURL(kind, seed), alt: name ? name + ' logo' : '', className: "w-full h-full object-cover" }));
+        React.createElement("img", { key: src || sceneURL(kind, seed), src: src || sceneURL(kind, seed), onError: event => { if (src) originalPhotoOnError(event, sceneURL(kind, seed)); }, alt: name ? name + ' profile photo' : '', className: "w-full h-full object-cover" }));
 }
 
 /** Coloured status label (Published, Draft...). */
