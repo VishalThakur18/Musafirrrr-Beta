@@ -29,6 +29,7 @@ async function refreshAuth(user) {
     }
 
     const currentUserId = authState.user && authState.user.id;
+    if (typeof wishlistService !== "undefined") wishlistService.syncIdentity();
 
     if (previousUserId !== currentUserId) {
         dataService.invalidate(false);

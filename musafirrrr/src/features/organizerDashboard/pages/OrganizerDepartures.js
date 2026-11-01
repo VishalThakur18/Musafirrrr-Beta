@@ -116,10 +116,11 @@ function OrganizerDepartures() {
         () => orgId
             ? organizerApi.trips(orgId)
             : Promise.resolve([]),
-        [orgId]
+        [orgId], { keepPreviousData: true }
     );
+    const listedTrips = useMemo(() => (data || []).filter(trip => trip.status !== 'DRAFT'), [data]);
 
-    if (loading) {
+    if (loading && !data) {
         return React.createElement(
             "p",
             { role: "status" },
@@ -127,7 +128,7 @@ function OrganizerDepartures() {
         );
     }
 
-    if (error) {
+    if (error && !data) {
         return React.createElement(
             "div",
             { role: "alert" },
@@ -138,7 +139,7 @@ function OrganizerDepartures() {
 
     return React.createElement(DepartureWorkspace, {
     key: orgId,
-    trips: data || [],
+    trips: listedTrips,
     organizerId: orgId,
     reloadTrips: reload
 });
@@ -156,6 +157,12 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
     const [notice, setNotice] = useState("");
     const [error, setError] = useState("");
     const [expanded, setExpanded] = useState({});
+    const [pauseTarget, setPauseTarget] = useState(null);
+    const [pausingId, setPausingId] = useState(null);
+    const pauseRequest = useRef(false);
+    const [statusTarget, setStatusTarget] = useState(null);
+    const [statusPendingId, setStatusPendingId] = useState(null);
+    const statusRequest = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -240,9 +247,9 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
         .filter(group => group.items.length);
 
     async function togglePause(item) {
-        setSaving(true);
-        setError("");
-        setNotice("");
+        if (pauseRequest.current) return;
+        pauseRequest.current = true;
+        setPausingId(item.id);
 
         try {
             const paused = await organizerApi.setTripEnquiryPause(
@@ -256,13 +263,14 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
                 )
             );
 
-            setNotice(paused
+            toast(paused
                 ? "Enquiries paused successfully."
                 : "Enquiries resumed successfully.");
         } catch (err) {
-            setError(err.message || "Could not update enquiry settings.");
+            toast(err.message || "Could not update enquiry settings.", "bad");
         } finally {
-            setSaving(false);
+            pauseRequest.current = false;
+            setPausingId(null);
         }
     }
 
@@ -363,7 +371,7 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
             setEditor(null);
             setNotice(values.id
                 ? "Departure updated successfully."
-                : "New departure created as a draft listing.");
+                : "New departure published and visible to travellers.");
         } catch (err) {
             setError(err.message || "Could not save the departure.");
         } finally {
@@ -381,7 +389,7 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
     }
 
     function addDeparture(tripId) {
-        const source = tripById[tripId || trips[0]?.id];
+        const source = tripById[tripId] || trips.find(trip => ['PUBLISHED', 'SOLD_OUT', 'COMPLETED'].includes(trip.status));
 
         if (!source) return;
 
@@ -400,9 +408,9 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
     }
 
     async function changeStatus(item, status) {
-        setSaving(true);
-        setError("");
-        setNotice("");
+        if (statusRequest.current) return;
+        statusRequest.current = true;
+        setStatusPendingId(item.id);
 
         try {
             const dbStatus = {
@@ -423,11 +431,12 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
                 )
             );
 
-            setNotice("Departure status updated.");
+            toast(status === "Full" ? "Departure marked full." : "Departure reopened.");
         } catch (err) {
-            setError(err.message || "Could not update departure status.");
+            toast(err.message || "Could not update departure status.", "bad");
         } finally {
-            setSaving(false);
+            statusRequest.current = false;
+            setStatusPendingId(null);
         }
     }
 
@@ -436,6 +445,31 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
     }
 
     return h("div", { className: "od-departures" },
+        h(Confirm, {
+            open: !!statusTarget,
+            title: statusTarget?.status === "Full" ? "Mark departure full?" : "Reopen departure?",
+            body: statusTarget?.status === "Full"
+                ? "This departure will show as sold out and stop accepting new enquiries. Existing enquiries and seat counts will stay unchanged."
+                : "This departure will be available again. If enquiries are paused, they will remain paused until you resume them.",
+            confirmLabel: statusTarget?.status === "Full" ? "Mark full" : "Reopen departure",
+            cancelLabel: "Cancel",
+            tone: "primary",
+            onClose: () => setStatusTarget(null),
+            onConfirm: () => { if (statusTarget) void changeStatus(statusTarget.item, statusTarget.status); }
+        }),
+        h(Confirm, {
+            open: !!pauseTarget,
+            title: pauseTarget?.paused ? "Resume enquiries?" : "Pause enquiries?",
+            body: pauseTarget ? (pauseTarget.paused
+                ? "Travellers will be able to send new enquiries for "
+                : "Travellers will not be able to send new enquiries for ") +
+                (tripById[pauseTarget.tripId]?.title || "this departure") + ". Existing enquiries will stay available." : "",
+            confirmLabel: pauseTarget?.paused ? "Resume enquiries" : "Pause enquiries",
+            cancelLabel: "Cancel",
+            tone: "primary",
+            onClose: () => setPauseTarget(null),
+            onConfirm: () => { if (pauseTarget) void togglePause(pauseTarget); }
+        }),
         h("div", { className: "od-departures-heading" },
             h("div", null,
                 h("span", { className: "od-kicker" }, "PLAN EVERY DEPARTURE"),
@@ -661,19 +695,26 @@ function DepartureWorkspace({ trips, organizerId, reloadTrips }) {
                             h(Btn, {
                                 size: "sm",
                                 variant: "outline",
-                                disabled: saving || closed,
-                                onClick: () => togglePause(item)
+                                disabled: saving || closed || pausingId === item.id || statusPendingId === item.id,
+                                "aria-busy": pausingId === item.id,
+                                onClick: () => { if (!pauseRequest.current) setPauseTarget(item); }
                             }, item.paused ? "Resume enquiries" : "Pause enquiries"),
 
                             !["Completed", "Cancelled"].includes(status) &&
                                 h(Btn, {
                                     size: "sm",
                                     variant: "outline",
-                                    disabled: saving,
-                                    onClick: () => changeStatus(
-                                        item,
-                                        status === "Full" ? "Upcoming" : "Full"
-                                    )
+                                    disabled: saving || statusPendingId === item.id || pausingId === item.id,
+                                    "aria-busy": statusPendingId === item.id,
+                                    onClick: () => {
+                                        if (statusRequest.current) return;
+                                        if (status === "Full" && item.remaining === 0) {
+                                            openEditor(item);
+                                            toast("Add available seats before reopening this departure.");
+                                            return;
+                                        }
+                                        setStatusTarget({ item, status: status === "Full" ? "Upcoming" : "Full" });
+                                    }
                                 }, status === "Full" ? "Reopen departure" : "Mark full")
                         ),
 
@@ -755,7 +796,7 @@ function DepartureEditor({
 
     const change = (key, value) => {
         setError("");
-        setForm(state => ({ ...state, [key]: value }));
+        setForm(state => dateRangePatch(state, { [key]: value }));
     };
 
     const field = (label, key, type, extra = {}) =>
@@ -812,7 +853,7 @@ function DepartureEditor({
                     value: form.tripId || "",
                     disabled: !!initial.id,
                     onChange: event => change("tripId", event.target.value)
-                }, trips.map(trip =>
+                }, trips.filter(trip => initial.id || ['PUBLISHED', 'SOLD_OUT', 'COMPLETED'].includes(trip.status)).map(trip =>
                     h("option", {
                         key: trip.id,
                         value: trip.id
@@ -820,10 +861,10 @@ function DepartureEditor({
                 ))
             ),
 
-            field("Departure date", "start", "date", { required: true }),
+            field("Departure date", "start", "date", { required: true, min: initial.id && initial.start < today() ? initial.start : today() }),
             field("Return date", "end", "date", {
                 required: true,
-                min: form.start
+                min: form.start || today()
             }),
             field("Total seats", "total", "number", {
                 required: true,

@@ -297,7 +297,6 @@ const organizerApi = {
         const wa = cleanWhatsApp(whatsapp);
         if (!wa) throw new Error("A WhatsApp number is required.");
         const ig = cleanInstagram(instagram);
-        if (!ig) throw new Error("An Instagram handle is required.");
         const { data, error } = await window.sbClient
             .from("organizers")
             .update({ whatsapp_number: wa, instagram_handle: ig || null })
@@ -343,7 +342,7 @@ const organizerApi = {
     
     /**
      * Saves a departure using the existing trips table and save_trip RPC.
-     * A new departure becomes a separate draft trip listing.
+     * A new departure from a listed trip is published as a separate listing.
      */
     
     async saveDeparture(tripId, organizerId, values) {
@@ -357,8 +356,8 @@ const organizerApi = {
         }
 
         if (
-            !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
-            !/^\d{4}-\d{2}-\d{2}$/.test(endDate) ||
+            !validDate(startDate) ||
+            !validDate(endDate) ||
             endDate < startDate
         ) {
             throw new Error("Choose valid departure and return dates.");
@@ -376,6 +375,7 @@ const organizerApi = {
         }
 
         const isNew = !values.id;
+        if (isNew && startDate < today()) throw new Error("Choose today or a future departure date.");
         const sourceTripId = isNew ? tripId : values.id;
 
         const source = await organizerApi.tripForEdit(
@@ -396,6 +396,9 @@ const organizerApi = {
         const durationNights = Math.max(0, durationDays - 1);
 
         const sourceStatus = String(source.status || "DRAFT").toUpperCase();
+        if (isNew && !["PUBLISHED", "SOLD_OUT", "COMPLETED"].includes(sourceStatus)) {
+            throw new Error("Publish the source trip before adding a departure.");
+        }
 
         if (!isNew && sourceStatus === "CANCELLED") {
             throw new Error("Cancelled trips cannot be edited here.");
@@ -421,8 +424,10 @@ const organizerApi = {
             total_spots: total,
             spots_left: total - sold,
             meeting_point: source.meetingPoint,
+            cancellation_policy: source.cancellationPolicy,
+            important_info: source.importantInfo,
             status: isNew
-                ? "draft"
+                ? "published"
                 : sourceStatus === "DRAFT"
                     ? "draft"
                     : "published",
@@ -444,8 +449,6 @@ const organizerApi = {
             payload
         );
 
-        dataService.invalidate();
-
         const savedId = typeof result === "string"
             ? result
             : result?.id;
@@ -461,21 +464,11 @@ const organizerApi = {
 
 
 
-    /** Copies a trip (photos, itinerary, inclusions) as a new draft. Returns the new trip id. */
+    /** Prepare an unsaved copy. Only Save draft or Publish creates a database row. */
     async duplicateTrip(tripId, organizerId) {
         const t = await organizerApi.tripForEdit(tripId, organizerId);
         if (!t) throw new Error("Trip not found.");
-        return organizerApi.saveTrip(null, {
-            title: t.title + " (copy)", destination: t.destination, region: t.region,
-            starting_location: t.startingLocation, category: t.category, group_type: t.groupType,
-            description: t.description, start_date: t.startDate, end_date: t.endDate,
-            duration_days: t.days, duration_nights: t.nights, price: t.price, currency: t.currency,
-            advance_amount: t.advanceAmount, total_spots: t.totalSpots, spots_left: t.totalSpots,
-            meeting_point: t.meetingPoint, status: "draft", cover_image_url: t.images[0] || null,
-            images: t.images,
-            itinerary: t.itinerary.map(x => ({ title: x.title, description: x.detail })),
-            included: t.included, excluded: t.excluded
-        });
+        return { ...t, id: null, slug: null, title: t.title + " (copy)", status: "DRAFT", availableSpots: t.totalSpots };
     },
 
     /* ---------- organizer profile ---------- */

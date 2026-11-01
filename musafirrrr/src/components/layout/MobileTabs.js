@@ -5,10 +5,10 @@
 
 /** Bottom tab bar on mobile. */
 function MobileTabs() {
-    const me = authService.current();
+    const { user: me, ready } = useAuth();
     const s = useStore();
     const route = useRoute();
-    if (!me || me.role !== 'TRAVELLER')
+    if (!ready || !me || me.role !== 'TRAVELLER')
         return null;
     const items = [['/traveller/dashboard', 'grid', 'Home'], ['/explore', 'search', 'Explore'], ['/saved', 'heart', 'Saved'], ['/traveller/my-trips', 'bag', 'My trips'], ['/traveller/profile', 'user', 'Profile']];
     return (React.createElement("nav", { className: "md:hidden fixed bottom-0 left-0 right-0 z-[80] bg-white border-t border-line", style: { paddingBottom: 'env(safe-area-inset-bottom,0px)' } },

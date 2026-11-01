@@ -6,7 +6,9 @@
 /** Heart button to save/unsave a trip. */
 function WishlistButton({ tripId, className, floating = true, onPhoto = false, showLabel = false }) {
     const s = useStore();
-    const on = s.wishlist.includes(tripId);
+    const { user: me, ready } = useAuth();
+    if (!ready || me?.role !== 'TRAVELLER') return null;
+    const on = wishlistService.has(tripId);
     return (React.createElement("button", { type: "button", "aria-pressed": on, "aria-label": on ? 'Remove from saved trips' : 'Save this trip', onClick: e => { e.preventDefault(); e.stopPropagation(); wishlistService.toggle(tripId); }, className: cls('w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90', onPhoto ? 'trip-card__save-button' : floating ? 'bg-white/92 backdrop-blur border border-white/60 shadow-card hover:bg-white' : 'border border-line bg-white hover:bg-sand', !onPhoto && (on ? 'text-bad' : 'text-ink/70 hover:text-ink'), className) },
         React.createElement(Icon, { name: "heart", size: 17, fill: on ? 'currentColor' : 'none', stroke: 1.8 }),
         showLabel && React.createElement("span", null, on ? "Saved" : "Save")));

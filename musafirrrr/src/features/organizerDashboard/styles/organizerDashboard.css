@@ -298,3 +298,21 @@
   }
   .organizer-workspace:has(.org-motion) nav a { transition: none; }
 }
+/* Unaddressed enquiries: retain a solid dot while its halo gently pulses. */
+.organizer-workspace .org-enquiry-attention { position: relative; }
+.organizer-workspace .org-enquiry-dot {
+  position: absolute; top: 2px; right: 2px; width: 10px; height: 10px;
+  border-radius: 50%; background: #16a34a; border: 2px solid #fff;
+  box-shadow: 0 0 7px #16a34a80; pointer-events: none;
+}
+.organizer-workspace .org-enquiry-dot::after {
+  content: ''; position: absolute; inset: -4px; border-radius: inherit;
+  border: 2px solid #22c55e; animation: enquiry-attention-pulse 2s ease-out infinite;
+}
+@keyframes enquiry-attention-pulse {
+  0% { transform: scale(.7); opacity: .65; }
+  80%, 100% { transform: scale(1.7); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .organizer-workspace .org-enquiry-dot::after { animation: none; opacity: .3; }
+}

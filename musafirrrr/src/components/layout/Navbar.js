@@ -53,7 +53,8 @@ function Navbar() {
         window.addEventListener('scroll', scroll, { passive: true });
         return () => { window.removeEventListener('scroll', scroll); cancelAnimationFrame(frame); };
     }, [open, route]);
-    const savedCount = s.wishlist.length;
+    const canSave = authReady && me?.role === 'TRAVELLER';
+    const savedCount = wishlistService.ids().length;
 
     const logout = async () => {
         try {
@@ -74,7 +75,7 @@ function Navbar() {
                     React.createElement(Link, { to: "/how-it-works", className: "px-3 py-2 rounded-full hover:bg-sand hover:text-ink transition-colors" }, "How it works"),
                     React.createElement(Link, { to: "/for-communities", className: "px-3 py-2 rounded-full hover:bg-sand hover:text-ink transition-colors" }, "For communities")),
                 React.createElement("div", { className: "ml-auto flex items-center gap-2" },
-                    React.createElement(Link, { to: "/saved", className: "relative hidden sm:inline-flex items-center gap-2 px-3 h-10 rounded-full text-[14.5px] font-medium text-slatey hover:bg-sand hover:text-ink transition-colors" },
+                    canSave && React.createElement(Link, { to: "/saved", className: "relative hidden sm:inline-flex items-center gap-2 px-3 h-10 rounded-full text-[14.5px] font-medium text-slatey hover:bg-sand hover:text-ink transition-colors" },
                         React.createElement(Icon, { name: "heart", size: 17, fill: savedCount ? 'currentColor' : 'none', className: savedCount ? 'text-bad' : '' }),
                         " Saved",
                         savedCount > 0 && React.createElement("span", { className: "text-[12px] font-bold text-ink" }, savedCount)),
@@ -93,7 +94,7 @@ function Navbar() {
         open && (React.createElement("div", { className: "lg:hidden border-t border-line bg-white fade-in" },
             React.createElement("div", { className: "px-5 py-4 flex flex-col gap-1 text-[15.5px] font-medium" },
                 React.createElement(Link, { to: "/explore", className: "py-2.5" }, "Explore trips"),
-                React.createElement(Link, { to: "/saved", className: "py-2.5" },
+                canSave && React.createElement(Link, { to: "/saved", className: "py-2.5" },
                     "Saved trips ",
                     savedCount > 0 && React.createElement("span", { className: "text-muted" },
                         "(",

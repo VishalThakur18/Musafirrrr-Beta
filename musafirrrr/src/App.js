@@ -75,7 +75,7 @@ function App() {
     else if (path === '/signup')
         page = !ready ? null : me ? React.createElement(RedirectHome, { me: me }) : React.createElement(SignupPage, { params: params });
     else if (path === '/saved')
-        page = React.createElement(SavedPage, null);
+        page = React.createElement(Guard, { role: "TRAVELLER" }, React.createElement(SavedPage, null));
     else if (path === '/traveller/dashboard')
         page = React.createElement(Guard, { role: "TRAVELLER" },
             React.createElement(TravellerDashboard, null));
@@ -90,7 +90,7 @@ function App() {
             path === '/organizer/trips' ? React.createElement(OrganizerTrips, { key: (params.trip || 'all') + ':' + (params.status || 'ALL'), selectedTripId: params.trip, initialStatus: params.status }) :
             path === '/organizer/departures' ? React.createElement(OrganizerDepartures, null) :
             path === '/organizer/finance' ? React.createElement(RevenueFinancePage, { key: me?.organizer?.id }) :
-                path === '/organizer/create' ? React.createElement(TripWizard, null) :
+                path === '/organizer/create' ? React.createElement(TripWizard, { copyId: params.copy }) :
                     parts[1] === 'edit' ? React.createElement(TripWizard, { tripId: parts[2] }) :
                         path === '/organizer/leads' ? React.createElement(OrganizerLeads, { key: (params.status || 'ALL') + (params.lead || ''), initialStatus: params.status, initialLead: params.lead }) :
                             path === '/organizer/profile' ? React.createElement(OrganizerProfileEdit, null) :

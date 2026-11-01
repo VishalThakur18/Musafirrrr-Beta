@@ -35,7 +35,9 @@ const store = {
         organizers: saved.organizers || ORGANIZERS,
         users: { ...saved.users },
         enquiries: saved.enquiries || ENQUIRIES,
-        wishlist: saved.wishlist || [], // trip ids — works logged out
+        wishlist: [],
+        wishlistLoading: false,
+        wishlistError: null,
         session: null,
         recent: saved.recent || [],
         toasts: []
@@ -48,7 +50,6 @@ const store = {
             organizers: s.organizers,
             users: s.users,
             enquiries: s.enquiries,
-            wishlist: s.wishlist,
             recent: s.recent
         });
         if (!ok)

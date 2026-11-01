@@ -14,7 +14,7 @@ function HowItWorksPage() {
             React.createElement("div", { className: "page-card p-6 sm:p-8" },
                 React.createElement("h2", { className: "text-2xl font-extrabold tracking-tight" }, "If you're travelling"),
                 React.createElement("ol", { className: "mt-5 space-y-6" }, [['Search', 'Enter a destination, your dates or a budget. Filter by trek, beach, all-girls, solo-friendly and more.'],
-                    ['Save what you like', 'Tap the heart on any trip. No account needed — your saved list stays on this device until you sign up.'],
+                    ['Save what you like', 'Log in to your traveller account and tap the heart on any trip. Your saved list is waiting whenever you sign in again.'],
                     ['Read the whole trip', 'Day-by-day itinerary, what is and is not included, group size, meeting point and the cancellation policy.'],
                     ['Enquire', 'Send your details to the organizer, then continue on WhatsApp. You pay them directly; we never hold your money.']
                 ].map(([t, b], i) => (React.createElement("li", { key: t, className: "flex gap-4" },

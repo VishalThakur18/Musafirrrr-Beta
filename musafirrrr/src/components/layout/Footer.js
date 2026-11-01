@@ -5,6 +5,7 @@
 
 /** Site footer. */
 function Footer() {
+    const { user: me, ready } = useAuth();
     const cols = [
         ['Explore', [['All trips', '/explore'], ['Destinations', '/explore'], ['Categories', '/explore?cat=Trek'], ['Saved trips', '/saved']]],
         ['For communities', [['List a trip', '/for-communities'], ['Organizer login', '/login?role=ORGANIZER'], ['How it works', '/how-it-works'], ['Create a trip', '/organizer/create']]],
@@ -23,7 +24,7 @@ function Footer() {
                             React.createElement(Icon, { name: "wa", size: 18 })))),
                 cols.map(([t, links]) => (React.createElement("div", { key: t },
                     React.createElement("h4", { className: "text-[13px] font-bold tracking-[.1em] text-beige" }, t),
-                    React.createElement("ul", { className: "mt-4 space-y-2.5 text-[14.5px] text-white/75" }, links.map(([l, to]) => React.createElement("li", { key: l },
+                    React.createElement("ul", { className: "mt-4 space-y-2.5 text-[14.5px] text-white/75" }, links.filter(([, to]) => to !== '/saved' || (ready && me?.role === 'TRAVELLER')).map(([l, to]) => React.createElement("li", { key: l },
                         React.createElement(Link, { to: to, className: "hover:text-white transition-colors" }, l)))))))),
             React.createElement("div", { className: "mt-12 pt-6 border-t border-white/12 flex flex-col sm:flex-row gap-3 justify-between text-[13px] text-white/55" },
                 React.createElement("span", null,

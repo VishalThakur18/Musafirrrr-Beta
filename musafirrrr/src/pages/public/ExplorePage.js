@@ -50,9 +50,9 @@ function FilterPanel({ f, set, onClear, count }) {
             React.createElement("h3", { className: "text-[13px] font-bold tracking-[.1em] text-muted mb-3" }, "DATES"),
             React.createElement("div", { className: "grid grid-cols-2 gap-2.5" },
                 React.createElement(Field, { label: "From" },
-                    React.createElement(Input, { type: "date", value: f.from || '', onChange: e => set({ from: e.target.value }) })),
+                    React.createElement(Input, { type: "date", min: today(), value: f.from || '', onChange: e => set({ from: e.target.value }) })),
                 React.createElement(Field, { label: "To" },
-                    React.createElement(Input, { type: "date", value: f.to || '', onChange: e => set({ to: e.target.value }) })))),
+                    React.createElement(Input, { type: "date", min: f.from || today(), value: f.to || '', onChange: e => set({ to: e.target.value }) })))),
         React.createElement("div", null,
             React.createElement("h3", { className: "text-[13px] font-bold tracking-[.1em] text-muted mb-3" }, "BUDGET PER PERSON"),
             React.createElement("div", { className: "grid grid-cols-2 gap-2.5" },
@@ -88,7 +88,7 @@ function ExplorePage({ params }) {
     const [loading, setLoading] = useState(true);
     useEffect(() => { setLoading(true); const t = setTimeout(() => setLoading(false), 350); return () => clearTimeout(t); }, [f.q, f.cat, f.group, f.min, f.max, f.from, f.to, f.duration, f.available]);
     useEffect(() => { setF(x => ({ ...x, q: params.q || '', cat: params.cat || '', group: params.group || '', max: params.max || '', from: params.from || '' })); }, [params.q, params.cat, params.group, params.max, params.from]);
-    const set = p => setF(x => ({ ...x, ...p }));
+    const set = p => setF(x => dateRangePatch(x, p, 'from', 'to'));
     const clear = () => { setF({ q: '', cat: '', group: '', min: '', max: '', from: '', to: '', duration: '', available: false, sort: f.sort }); go('/explore'); };
     const results = useMemo(() => filterTrips(s.trips, f), [s.trips, f]);
     const orgCount = new Set(results.map(t => t.organizerId)).size;
