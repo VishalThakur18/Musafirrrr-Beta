@@ -123,15 +123,10 @@ function OrganizerTrips({ selectedTripId, initialStatus } = {}) {
                             leadCount(t.id), " leads")),
                     React.createElement("div", { className: "mt-3.5 flex flex-wrap gap-2" },
                         React.createElement(Btn, { size: "sm", variant: "outline", icon: "edit", onClick: () => go('/organizer/edit/' + t.id) }, "Edit"),
-                        t.status === 'DRAFT' && React.createElement(Btn, { size: "sm", onClick: () => run(t.id, () => organizerApi.setTripStatus(t.id, t.availableSpots === 0 ? 'sold_out' : 'published'), 'Published') }, "Publish"),
+                        t.status === 'DRAFT' && React.createElement(Btn, { size: "sm", onClick: () => go('/organizer/edit/' + t.id) }, "Review & publish"),
                         t.status === 'PUBLISHED' && React.createElement(Btn, { size: "sm", variant: "outline", onClick: () => run(t.id, () => organizerApi.setTripStatus(t.id, 'draft'), 'Unpublished \u2014 back to draft') }, "Unpublish"),
                         t.status === 'SOLD_OUT' && React.createElement(Btn, { size: "sm", variant: "outline", onClick: () => run(t.id, () => organizerApi.setTripSpots(t.id, Math.max(1, t.availableSpots), 'published'), 'Reopened') }, "Reopen"),
-                        React.createElement(Btn, { size: "sm", variant: "outline", icon: "copy", onClick: () => run(t.id, async () => {
-                                const newId = await organizerApi.duplicateTrip(t.id, orgId);
-                                toast('Duplicated as a draft');
-                                go('/organizer/edit/' + newId);
-                                return false;
-                            }) }, "Duplicate"),
+                        React.createElement(Btn, { size: "sm", variant: "outline", icon: "copy", onClick: () => go('/organizer/create?copy=' + encodeURIComponent(t.id)) }, "Duplicate"),
                         React.createElement(Btn, { size: "sm", variant: "ghost", className: "text-bad hover:bg-[#F7E9E7]", icon: "trash", onClick: () => askDelete(t) }, "Delete")),
                     t.status !== 'COMPLETED' && React.createElement("div", { className: "mt-3 flex items-center gap-3" },
                         React.createElement("label", { className: "text-[13px] font-semibold text-slatey" }, "Spots left"),

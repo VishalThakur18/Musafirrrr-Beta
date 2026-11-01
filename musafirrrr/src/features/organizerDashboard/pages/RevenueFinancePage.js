@@ -130,10 +130,11 @@ function FinanceFilterBar({ filters: f, onChange, trips, departures, reset }) {
                         ),
                         h("input", {
                             type: "date",
+                            min: key === "end" ? f.start || undefined : undefined,
                             value: f[key],
                             "aria-describedby": "finance-range-help",
                             onChange: e =>
-                                onChange({ [key]: e.target.value })
+                                onChange(dateRangePatch(f, { [key]: e.target.value }))
                         })
                     )
                 )

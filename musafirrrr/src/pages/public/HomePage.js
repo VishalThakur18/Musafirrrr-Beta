@@ -25,6 +25,7 @@ function Hero() {
     const videoRef = useRef(null);
     const heroRef = useRef(null);
     const [playing, setPlaying] = useState(false);
+    const [videoReady, setVideoReady] = useState(false);
     useEffect(() => {
         const media = window.matchMedia('(min-width: 768px) and (prefers-reduced-motion: no-preference)');
         const hero = heroRef.current;
@@ -61,7 +62,7 @@ function Hero() {
     }, []);
     return (React.createElement("section", { ref: heroRef, className: "relative home-hero" },
         React.createElement("div", { className: "absolute inset-0 overflow-hidden" },
-            React.createElement("video", { ref: videoRef, src: "assets/videos/home-hero.mp4", autoPlay: true, muted: true, loop: true, playsInline: true, preload: "metadata", poster: sceneURL('mountains', 9001), "aria-hidden": "true", tabIndex: -1, onPlay: () => setPlaying(true), onPause: () => setPlaying(false), className: "home-hero__video" }),
+            React.createElement("video", { ref: videoRef, src: "assets/videos/home-hero.mp4", autoPlay: true, muted: true, loop: true, playsInline: true, preload: "auto", "aria-hidden": "true", tabIndex: -1, onLoadedData: () => setVideoReady(true), onPlaying: () => { setVideoReady(true); setPlaying(true); }, onPause: () => setPlaying(false), className: cls("home-hero__video", videoReady && "home-hero__video--ready") }),
             React.createElement("div", { className: "home-hero__overlay" })),
         React.createElement("div", { className: "relative max-w-shell mx-auto px-5 lg:px-8 pt-16 pb-10 md:pt-24 md:pb-16" },
             React.createElement("div", { className: "max-w-3xl" },
@@ -145,7 +146,7 @@ function HomePage() {
                 React.createElement("div", { className: "rounded-3xl bg-sand border border-line p-7 sm:p-12" },
                     React.createElement(HomeSectionHead, { title: "How Musafirrrr works", sub: "Three steps, no middlemen, no booking fee." }),
                     React.createElement("ol", { className: "grid gap-8 md:grid-cols-3 md:gap-12" }, [['Discover', 'Browse upcoming trips from travel communities across the country, all in one feed.'],
-                        ['Choose', 'Compare destinations, dates, group type and price. Save the ones you like — no account needed.'],
+                        ['Choose', 'Compare destinations, dates, group type and price. Log in as a traveller to save the ones you like.'],
                         ['Connect', 'Send an enquiry and talk to the organizer directly on WhatsApp. You book with them.']
                     ].map(([t, b], i) => (React.createElement("li", { key: t, "data-home-reveal": "", className: "relative" },
                         React.createElement("span", { className: "text-[13px] font-bold text-beige" },

@@ -43,3 +43,20 @@ const latest = mapping.dbToEnquiry({ created_at: '2026-10-23T09:00:00Z', status:
 assert.ok(new Date(latest.createdAtTimestamp) > new Date(early.createdAtTimestamp), 'Same-day enquiries retain chronological ordering');
 assert.match(latest.createdAt, /^\d{4}-\d{2}-\d{2}$/, 'Display dates retain the existing date-only contract');
 console.log('PASS: scoped subscriptions, debounce, fallback polling, visibility/offline handling, reconnect, cleanup and timestamp ordering.');
+
+// The attention indicator follows live counts, including the last enquiry being addressed.
+const ui = vm.createContext({
+    React: { createElement: (type, props, ...children) => ({ type, props: props || {}, children: children.flat(Infinity) }) },
+    Link: 'a', Icon: 'icon'
+});
+vm.runInContext(fs.readFileSync(path.join(root, 'src/features/organizerDashboard/pages/OrganizerDashboard.js'), 'utf8'), ui);
+const nodes = tree => !tree || typeof tree !== 'object' ? [] : [tree, ...(tree.children || []).flatMap(nodes)];
+for (const count of [0, 1, 3, 1, 0]) {
+    const tree = ui.OrganizerOverviewActions({ newCount: count, drafts: [], departures: [], leads: [], org: { id: 'org-a', verified: true } });
+    const all = nodes(tree);
+    assert.equal(all.filter(n => n.props.className === 'org-enquiry-dot').length, count > 0 ? 1 : 0);
+    const status = all.find(n => n.props.role === 'status');
+    assert.equal(status.props['aria-live'], 'polite');
+    assert.equal(status.children[0], count ? count + ' new ' + (count === 1 ? 'enquiry' : 'enquiries') + ' to review' : 'No new enquiries waiting');
+}
+console.log('PASS: attention dot appears for new enquiries, follows count changes and disappears at zero');

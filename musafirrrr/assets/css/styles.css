@@ -91,7 +91,15 @@
 
 /* Native looping hero video: fixed cover area prevents layout shifts. */
 .home-hero { background: #132025; isolation: isolate; }
-.home-hero__video { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+.home-hero__video { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; opacity: 0; transition: opacity 320ms ease-out; }
+.home-hero__video--ready { opacity: 1; }
+/* A short shared entry fade also covers navigation through browser history. */
+@keyframes site-page-enter { from { opacity: 0; } to { opacity: 1; } }
+.site-motion { animation: site-page-enter 180ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .home-hero__video { transition: none; }
+  .site-motion { animation: none; }
+}
 /* Homepage motion: individual translate leaves existing hover transforms intact. */
 .home-motion .home-reveal {
   transition: opacity 600ms cubic-bezier(.22,1,.36,1) var(--home-delay, 0ms),

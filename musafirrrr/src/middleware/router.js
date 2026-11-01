@@ -8,10 +8,15 @@
 function useRoute() {
     const [h, setH] = useState(() => location.hash.slice(1) || '/');
     useEffect(() => {
-        const on = () => { setH(location.hash.slice(1) || '/'); window.scrollTo({ top: 0, behavior: 'instant' }); };
+        const on = () => { setH(location.hash.slice(1) || '/'); };
         window.addEventListener('hashchange', on);
         return () => window.removeEventListener('hashchange', on);
     }, []);
+    // Reset after the destination mounts, before paint, instead of flashing the
+    // outgoing page at the top while React is still processing navigation.
+    React.useLayoutEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }, [h]);
     return h;
 }
 

@@ -132,7 +132,7 @@ function SignupPage({ params }) {
     const signupFooter = React.createElement(React.Fragment, null,
         React.createElement("p", { className: "text-[14px] text-slatey" }, "Already have an account? ",
             React.createElement(Link, { to: "/login", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Log in")),
-        React.createElement("p", { className: "text-[12px] text-muted" }, role === 'TRAVELLER' ? "Any trips you saved on this device move into your account." : "Your community profile is just the beginning. Add your first trip next."));
+        React.createElement("p", { className: "text-[12px] text-muted" }, role === 'TRAVELLER' ? "Save trips to your traveller account and find them whenever you sign in." : "Your community profile is just the beginning. Add your first trip next."));
     return (React.createElement(AuthShell, { travellerIntro: role === 'TRAVELLER', communityIntro: role === 'ORGANIZER', footer: signupFooter, title: role === 'TRAVELLER' ? 'Create your traveller account' : 'Create your community profile', sub: role === 'TRAVELLER' ? 'Saved trips and enquiries, all in one place.' : 'This becomes your public page on Musafirrrr.' },
         React.createElement("button", { onClick: () => setRole(''), className: "mt-4 inline-flex items-center gap-1.5 text-[13.5px] text-slatey hover:text-ink" },
             React.createElement(Icon, { name: "chevL", size: 15 }),

@@ -40,7 +40,7 @@ function SearchBar({ variant = 'hero', initial = {}, onSearch }) {
                         m))))))),
             React.createElement("div", { className: "flex-1 px-3 py-2.5 md:py-2 border-t md:border-t-0 border-line" },
                 React.createElement("label", { htmlFor: "from", className: "block text-[11px] font-bold tracking-[.12em] text-muted" }, "WHEN"),
-                React.createElement("input", { id: "from", type: "date", value: from, onChange: e => setFrom(e.target.value), className: "w-full bg-transparent border-0 p-0 mt-0.5 text-[15px] font-medium focus:ring-0 outline-none" })),
+                React.createElement("input", { id: "from", type: "date", min: today(), value: from, onChange: e => setFrom(e.target.value), className: "w-full bg-transparent border-0 p-0 mt-0.5 text-[15px] font-medium focus:ring-0 outline-none" })),
             React.createElement("div", { className: "flex-1 px-3 py-2.5 md:py-2 border-t md:border-t-0 border-line" },
                 React.createElement("label", { htmlFor: "bg", className: "block text-[11px] font-bold tracking-[.12em] text-muted" }, "BUDGET"),
                 React.createElement("select", { id: "bg", value: budget, onChange: e => setBudget(e.target.value), className: "w-full bg-transparent border-0 p-0 mt-0.5 text-[15px] font-medium focus:ring-0 outline-none appearance-none" },

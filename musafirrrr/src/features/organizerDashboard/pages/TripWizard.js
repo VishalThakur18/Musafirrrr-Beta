@@ -89,7 +89,7 @@ function tripToForm(t, org) {
     return {
         title: t.title, destination: t.destination, region: t.region || '', startingFrom: t.startingLocation || '',
         category: t.category, groupType: t.groupType, description: t.description || '',
-        startDate: t.startDate, endDate: t.endDate, days: t.days, nights: t.nights,
+        startDate: t.startDate || '', endDate: t.endDate || '', days: t.startDate && t.endDate ? t.days : 0, nights: t.nights,
         price: t.price, currency: t.currency || 'INR', advance: t.advanceAmount || 0,
         totalSpots: t.totalSpots, availableSpots: t.availableSpots,
         images: (t.images || []).map(url => ({ k: 'file', url })),
@@ -101,21 +101,21 @@ function tripToForm(t, org) {
 }
 
 /** Loads the trip when editing, then shows the form. */
-function TripWizard({ tripId }) {
+function TripWizard({ tripId, copyId }) {
     const { user: me } = useAuth();
     const org = me ? me.organizer : null;
     const orgId = org ? org.id : null;
     const { loading, error, data } = useAsync(
-        () => (tripId && orgId) ? organizerApi.tripForEdit(tripId, orgId) : Promise.resolve(null),
-        [tripId, orgId]
+        () => !orgId ? Promise.resolve(null) : tripId ? organizerApi.tripForEdit(tripId, orgId) : copyId ? organizerApi.duplicateTrip(copyId, orgId) : Promise.resolve(null),
+        [tripId, copyId, orgId]
     );
     if (!org)
         return React.createElement(EmptyState, { icon: "user", title: "Your community profile is missing", body: "We couldn't find your organizer profile. Please contact support." });
-    if (tripId && loading)
+    if ((tripId || copyId) && loading)
         return React.createElement("p", { className: "text-slatey py-10" }, "Loading trip...");
-    if (tripId && (error || !data))
+    if ((tripId || copyId) && (error || !data))
         return React.createElement(EmptyState, { icon: "shield", title: "Trip not found", body: "This trip doesn't exist, or it isn't one of yours.", action: React.createElement(Btn, { onClick: () => go('/organizer/trips') }, "Back to my trips") });
-    return React.createElement(TripWizardForm, { key: tripId || 'new', me: me, org: org, existing: data });
+    return React.createElement(TripWizardForm, { key: tripId || copyId || 'new', me: me, org: org, existing: data });
 }
 
 /** The nine-step form. */
@@ -125,19 +125,21 @@ function TripWizardForm({ me, org, existing }) {
     const [step, setStep] = useState(0);
     const [err, setErr] = useState({});
     const [busy, setBusy] = useState(false);
+    const [dirty, setDirty] = useState(false);
+    const savingRef = useRef(false);
     const [f, setF] = useState(() => existing ? tripToForm(existing, org) : {
         title: '', destination: '', region: '', startingFrom: '', category: 'Backpacking', groupType: 'Mixed Group', description: '',
-        startDate: '', endDate: '', days: 0, nights: 0, price: '', currency: 'INR', advance: 2000, totalSpots: 15, availableSpots: 15,
+        startDate: '', endDate: '', days: 0, nights: 0, price: '', currency: 'INR', advance: 0, totalSpots: 15, availableSpots: 15,
         images: [], itinerary: [{ day: 1, title: '', detail: '' }], included: [...INC_DEF], excluded: [...EXC_DEF],
         meetingPoint: '', whatsapp: org.whatsapp_number || '', instagram: org.instagram_handle || ''
     });
-    const set = p => setF(x => ({ ...x, ...p }));
+    const set = p => { setDirty(true); setF(x => dateRangePatch(x, p, 'startDate', 'endDate')); };
     useEffect(() => {
         if (f.startDate && f.endDate && f.endDate >= f.startDate) {
             const days = Math.round((d(f.endDate) - d(f.startDate)) / 86400000) + 1;
             if (days !== f.days)
-                set({ days, nights: Math.max(0, days - 1) });
-        }
+                setF(x => ({ ...x, days, nights: Math.max(0, days - 1) }));
+        } else setF(x => ({ ...x, days: 0, nights: 0 }));
     }, [f.startDate, f.endDate]);
     const validateStep = i => {
         const e = {};
@@ -152,9 +154,11 @@ function TripWizardForm({ me, org, existing }) {
                 e.description = 'Two or three sentences at least.';
         }
         if (i === 1) {
-            if (!f.startDate)
+            if (!validDate(f.startDate))
                 e.startDate = 'Pick a start date.';
-            if (!f.endDate)
+            else if (!existing?.id && f.startDate < today())
+                e.startDate = 'Choose today or a future start date.';
+            if (!validDate(f.endDate))
                 e.endDate = 'Pick an end date.';
             if (f.startDate && f.endDate && f.endDate < f.startDate)
                 e.endDate = 'The end date is before the start date.';
@@ -187,9 +191,13 @@ function TripWizardForm({ me, org, existing }) {
     const prev = () => setStep(s_ => Math.max(0, s_ - 1));
 
     const save = async (status) => {
-        if (busy)
+        if (savingRef.current)
             return;
-        for (let i = 0; i < 8; i++) {
+        if (status === 'DRAFT' && !dirty) return;
+        if (status === 'DRAFT' && !f.title.trim()) {
+            setErr({ title: 'Give this draft a name.' }); setStep(0); return;
+        }
+        for (let i = 0; status === 'PUBLISHED' && i < 8; i++) {
             if (!validateStep(i)) {
                 setStep(i);
                 toast('Something is missing on this step', 'bad');
@@ -197,9 +205,11 @@ function TripWizardForm({ me, org, existing }) {
             }
         }
         setBusy(true);
+        savingRef.current = true;
         const uploaded = [];
+        let committed = false;
         try {
-            await organizerApi.updateContact(org.id, { whatsapp: f.whatsapp, instagram: f.instagram });
+            if (status === 'PUBLISHED') await organizerApi.updateContact(org.id, { whatsapp: f.whatsapp, instagram: f.instagram });
 
             // Upload new photos; keep already-saved ones as they are
             const urls = [];
@@ -225,11 +235,13 @@ function TripWizardForm({ me, org, existing }) {
                 title: f.title.trim(), destination: f.destination.trim(), region: f.region.trim(),
                 starting_location: f.startingFrom.trim(), category: f.category, group_type: f.groupType,
                 description: f.description.trim(),
-                start_date: f.startDate, end_date: f.endDate, duration_days: f.days, duration_nights: f.nights,
+                start_date: f.startDate || null, end_date: f.endDate || null, duration_days: Math.max(1, f.days), duration_nights: f.nights,
                 price: Math.round(+f.price), currency: f.currency, advance_amount: Math.round(+f.advance) || 0,
                 total_spots: total,
                 spots_left: Math.max(0, Math.min(Math.round(+f.availableSpots), total)),
                 meeting_point: f.meetingPoint.trim() || 'Shared with the group before departure',
+                cancellation_policy: existing?.cancellationPolicy || null,
+                important_info: existing?.importantInfo || null,
                 status: status.toLowerCase(),
                 cover_image_url: urls[0],
                 images: urls,
@@ -238,19 +250,21 @@ function TripWizardForm({ me, org, existing }) {
                 excluded: f.excluded.map(x => x.trim()).filter(Boolean)
             };
 
-            await organizerApi.saveTrip(existing ? existing.id : null, payload);
+            await organizerApi.saveTrip(existing?.id || null, payload);
+            committed = true;
             await window.refreshAuth();   // pick up the new contact details
             toast(status === 'PUBLISHED' ? 'Trip published' : 'Draft saved');
             go('/organizer/trips');
         }
         catch (x) {
             console.error(x);
-            if (uploaded.length)
+            if (!committed && uploaded.length)
                 organizerApi.removeTripImages(uploaded).catch(() => { });   // don't leave orphan files
             toast(x.message || 'Could not save the trip. Try again.', 'bad');
         }
         finally {
             setBusy(false);
+            savingRef.current = false;
         }
     };
 
@@ -259,7 +273,7 @@ function TripWizardForm({ me, org, existing }) {
     return (React.createElement(React.Fragment, null,
         React.createElement("div", { className: "flex items-start justify-between gap-4 flex-wrap mb-6" },
             React.createElement("div", null,
-                React.createElement("h1", { className: "text-[28px] sm:text-[34px] font-extrabold tracking-[-0.03em] leading-tight" }, existing ? 'Edit trip' : 'Create a trip'),
+                React.createElement("h1", { className: "text-[28px] sm:text-[34px] font-extrabold tracking-[-0.03em] leading-tight" }, existing?.id ? 'Edit trip' : existing ? 'Duplicate trip' : 'Create a trip'),
                 React.createElement("p", { className: "text-[15px] text-slatey mt-1" },
                     "Step ", step + 1, " of ", WIZARD.length, " \u00B7 ", WIZARD[step])),
             React.createElement(Btn, { variant: "ghost", onClick: () => go('/organizer/trips') }, "Cancel")),
@@ -290,9 +304,9 @@ function TripWizardForm({ me, org, existing }) {
             step === 1 && React.createElement("div", { className: "space-y-5" },
                 React.createElement("div", { className: "grid sm:grid-cols-2 gap-5" },
                     React.createElement(Field, { label: "Start date", error: err.startDate },
-                        React.createElement(Input, { type: "date", value: f.startDate, onChange: e => set({ startDate: e.target.value }) })),
+                        React.createElement(Input, { type: "date", min: existing?.id && existing.startDate < today() ? existing.startDate : today(), value: f.startDate, onChange: e => set({ startDate: e.target.value }) })),
                     React.createElement(Field, { label: "End date", error: err.endDate },
-                        React.createElement(Input, { type: "date", value: f.endDate, onChange: e => set({ endDate: e.target.value }) }))),
+                        React.createElement(Input, { type: "date", min: f.startDate || today(), value: f.endDate, onChange: e => set({ endDate: e.target.value }) }))),
                 React.createElement("div", { className: "rounded-xl bg-sand border border-line p-4 flex items-center gap-3" },
                     React.createElement(Icon, { name: "clock", size: 18, className: "text-earth" }),
                     React.createElement("span", { className: "text-[15px] font-semibold" }, f.days ? `${f.days}D / ${f.nights}N` : 'Duration fills in once both dates are set')),
@@ -310,7 +324,7 @@ function TripWizardForm({ me, org, existing }) {
                     React.createElement(Field, { label: "Advance to hold a spot", error: err.advance },
                         React.createElement(Input, { type: "number", min: "0", step: "500", value: f.advance, onChange: e => set({ advance: e.target.value }) })),
                     React.createElement(Field, { label: "Total spots", error: err.totalSpots },
-                        React.createElement(Input, { type: "number", min: "1", value: f.totalSpots, onChange: e => set(existing ? { totalSpots: e.target.value } : { totalSpots: e.target.value, availableSpots: e.target.value }) })),
+                        React.createElement(Input, { type: "number", min: "1", value: f.totalSpots, onChange: e => set(existing?.id ? { totalSpots: e.target.value } : { totalSpots: e.target.value, availableSpots: e.target.value }) })),
                     React.createElement(Field, { label: "Spots still open", className: "sm:col-span-2", hint: "You can change this any time from My trips." },
                         React.createElement(Input, { type: "number", min: "0", max: f.totalSpots, value: f.availableSpots, onChange: e => set({ availableSpots: e.target.value }) }))),
                 +f.price > 0 && React.createElement("div", { className: "rounded-xl bg-sand border border-line p-4 text-[14.5px]" },
@@ -360,7 +374,7 @@ function TripWizardForm({ me, org, existing }) {
         React.createElement("div", { className: "max-w-3xl mt-6 flex flex-col sm:flex-row gap-3 sm:items-center" },
             step > 0 && React.createElement(Btn, { variant: "outline", onClick: prev, icon: "chevL" }, "Back"),
             step < WIZARD.length - 1 && React.createElement(Btn, { onClick: next, className: "sm:ml-auto" }, "Continue"),
+            React.createElement(Btn, { variant: "outline", disabled: !dirty || busy, loading: busy, onClick: () => save('DRAFT') }, "Save draft"),
             step === WIZARD.length - 1 && React.createElement(React.Fragment, null,
-                React.createElement(Btn, { variant: "outline", loading: busy, onClick: () => save('DRAFT') }, "Save draft"),
-                React.createElement(Btn, { className: "sm:ml-auto", size: "lg", loading: busy, onClick: () => save('PUBLISHED') }, "Publish trip")))));
+                React.createElement(Btn, { className: "sm:ml-auto", size: "lg", disabled: busy, loading: busy, onClick: () => save('PUBLISHED') }, "Publish trip")))));
 }

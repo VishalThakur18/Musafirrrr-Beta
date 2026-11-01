@@ -20,7 +20,7 @@ function fmtDate(s) { const x = d(s); return MON[x.getMonth()] + ' ' + x.getDate
 function fmtLong(s) { const x = d(s); return MON[x.getMonth()] + ' ' + x.getDate() + ', ' + x.getFullYear(); }
 
 /** e.g. "Oct 12–15". */
-function dateRange(a, b) { const A = d(a), B = d(b); return A.getMonth() === B.getMonth() ? `${MON[A.getMonth()]} ${A.getDate()}–${B.getDate()}` : `${fmtDate(a)} – ${fmtDate(b)}`; }
+function dateRange(a, b) { if (!a || !b) return 'Dates not set'; const A = d(a), B = d(b); return A.getMonth() === B.getMonth() ? `${MON[A.getMonth()]} ${A.getDate()}–${B.getDate()}` : `${fmtDate(a)} – ${fmtDate(b)}`; }
 
 /** Days left until a date. */
 function daysUntil(s) { return Math.ceil((d(s) - new Date()) / 86400000); }
