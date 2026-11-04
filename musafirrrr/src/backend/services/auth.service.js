@@ -179,11 +179,6 @@ async function finishGoogleLogin(user) {
   return true;
 }
 
-/** Where the confirmation link sends the user back to. */
-function emailRedirectUrl() {
-  // No hash here: Supabase appends ?code=... and we handle it in init().
-  return window.location.origin + window.location.pathname;
-}
 
 /**
  * With "Confirm email" on, signing up an already-registered email does NOT
@@ -213,7 +208,7 @@ const authService = {
 
     if (error) {
         if (error.code === "email_not_confirmed" || /not confirmed/i.test(error.message)) {
-        const e = new Error("Please confirm your email first. Check your inbox for the link.");
+        const e = new Error("Please confirm your email first. Check your inbox for the code.");
         e.code = "email_not_confirmed";
         throw e;
         }
@@ -235,7 +230,6 @@ const authService = {
       email: String(d.email).trim(),
       password: d.password,
       options: {
-        emailRedirectTo: emailRedirectUrl(),
         data: {
           role: "traveller",
           full_name: d.name.trim(),
@@ -288,7 +282,6 @@ const authService = {
       email: String(d.email).trim(),
       password: d.password,
       options: {
-        emailRedirectTo: emailRedirectUrl(),
         data: {
           role: "organizer",
           full_name: d.name.trim(),
@@ -324,12 +317,61 @@ const authService = {
   },
 
   async resendConfirmation(email) {
-  const { error } = await window.sbClient.auth.resend({
-    type: "signup",
-    email: String(email).trim(),
-    options: { emailRedirectTo: emailRedirectUrl() },
-  });
+    const { error } = await window.sbClient.auth.resend({
+      type: "signup",
+      email: String(email).trim(),
+    });
+    if (error) throw error;
+  },
+
+  async verifyEmailOtp(email, token) {
+    const sb = window.sbClient;
+
+    const { data, error } = await sb.auth.verifyOtp({
+      email: String(email).trim(),
+      token: String(token).trim(),
+      type: "signup",
+    });
+
+    if (error) throw error;
+    if (!data.user || !data.session) {
+      throw new Error("Verification failed. Please try again.");
+    }
+
+    try { await ensureRoleRecords(data.user); } catch (e) { console.error(e); }
+
+    const user = await window.getCurrentUser();
+    await window.refreshAuth(user);
+    return user;
+  },
+
+  async sendPasswordReset(email) {
+  const { error } = await window.sbClient.auth.resetPasswordForEmail(
+    String(email).trim()
+  );
   if (error) throw error;
+},
+
+async resetPasswordWithOtp(email, token, newPassword) {
+  const sb = window.sbClient;
+
+  const { data, error } = await sb.auth.verifyOtp({
+    email: String(email).trim(),
+    token: String(token).trim(),
+    type: "recovery",
+  });
+
+  if (error) throw error;
+  if (!data.session) throw new Error("Verification failed. Please try again.");
+
+  const { error: updateError } = await sb.auth.updateUser({ password: newPassword });
+  if (updateError) throw updateError;
+
+  try { await ensureRoleRecords(data.user); } catch (e) { console.error(e); }
+
+  const user = await window.getCurrentUser();
+  await window.refreshAuth(user);
+  return user;
 },
 
 /** Call once after the app has rendered. Handles the email-link return. */
