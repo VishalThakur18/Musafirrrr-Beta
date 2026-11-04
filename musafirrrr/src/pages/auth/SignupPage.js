@@ -34,6 +34,97 @@ function GoogleButton({ label = "Continue with Google", next }) {
         busy ? "Redirecting to Google..." : label);
 }
 
+function VerifyEmail({ email, onDone }) {
+    const [code, setCode] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [err, setErr] = useState('');
+    const [cooldown, setCooldown] = useState(60);
+
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const id = setTimeout(() => setCooldown(c => c - 1), 1000);
+        return () => clearTimeout(id);
+    }, [cooldown]);
+
+    const verify = async (e) => {
+        e.preventDefault();
+        if (busy) return;
+        if (!/^\d{6}$/.test(code)) { setErr('Enter the 6-digit code.'); return; }
+        setBusy(true);
+        setErr('');
+        try {
+            const user = await authService.verifyEmailOtp(email, code);
+            onDone(user);
+        } catch (x) {
+            setErr(/expired|invalid/i.test(x.message)
+                ? 'That code is wrong or has expired.'
+                : (x.message || 'Could not verify. Try again.'));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const resend = async () => {
+        if (cooldown > 0) return;
+        try {
+            await authService.resendConfirmation(email);
+            setCooldown(60);
+            toast('New code sent.');
+        } catch (x) {
+            toast(x.message || 'Could not resend the code.');
+        }
+    };
+
+    return React.createElement("form", { onSubmit: verify, className: "mt-8 space-y-4" },
+        React.createElement(Field, { label: "Verification code", error: err },
+            React.createElement(Input, {
+                value: code,
+                onChange: e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6)),
+                placeholder: "123456",
+                inputMode: "numeric",
+                autoComplete: "one-time-code",
+                maxLength: 6
+            })),
+        React.createElement(Btn, { type: "submit", size: "lg", className: "w-full", loading: busy }, "Verify email"),
+        React.createElement("button", {
+            type: "button", onClick: resend, disabled: cooldown > 0,
+            className: "text-[13.5px] font-semibold underline underline-offset-4 disabled:opacity-50 disabled:no-underline"
+        }, cooldown > 0 ? "Resend code in " + cooldown + "s" : "Resend code"),
+        React.createElement("p", { className: "text-[13.5px] text-slatey" }, "Can't find it? Check your spam folder."));
+}
+
+function VerifyModal({ email, onClose, onDone }) {
+    useEffect(() => {
+        const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', onKey);
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.body.style.overflow = prev;
+        };
+    }, []);
+
+    return React.createElement("div", {
+        className: "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/50",
+        role: "dialog",
+        "aria-modal": "true"
+    },
+        React.createElement("div", {
+            className: "relative w-full max-w-md rounded-2xl bg-white p-7 shadow-card",
+            onClick: (e) => e.stopPropagation()
+        },
+            React.createElement("button", {
+                type: "button",
+                onClick: onClose,
+                "aria-label": "Close",
+                className: "absolute right-4 top-4 text-muted hover:text-ink text-[22px] leading-none"
+            }, "\u00D7"),
+            React.createElement("h2", { className: "text-[22px] font-bold tracking-tight" }, "Verify your email"),
+            React.createElement("p", { className: "mt-2 text-[14px] text-slatey" },
+                "We sent a 6-digit code to " + email + "."),
+            React.createElement(VerifyEmail, { email, onDone })));
+}
 
 /** Signup (#/signup). */
 function SignupPage({ params }) {
@@ -43,23 +134,6 @@ function SignupPage({ params }) {
     const [sent, setSent] = useState(null); // email address once confirmation is sent
     const [t, setT] = useState({ name: '', email: '', phone: '', password: '' });
     const [o, setO] = useState({ orgName: '', name: '', email: '', phone: '', password: '', city: '', instagram: '', whatsapp: '', bio: '' });
-    const resend = async () => {
-        setBusy(true);
-        try {
-            await authService.resendConfirmation(sent);
-            toast("Confirmation email sent again.");
-        } catch (x) {
-            toast(x.message);
-        } finally {
-            setBusy(false);
-        }
-    };
-    if (sent)
-        return React.createElement(AuthShell, { title: "Check your email", sub: "We sent a confirmation link to " + sent + ". Click it to activate your account." },
-            React.createElement("div", { className: "mt-8 space-y-3" },
-                React.createElement(Btn, { variant: "outline", className: "w-full", loading: busy, onClick: resend }, "Resend email"),
-                React.createElement("p", { className: "text-[13.5px] text-slatey" }, "Can't find it? Check your spam folder."),
-                React.createElement(Link, { to: "/login", className: "font-semibold underline underline-offset-4 text-[14px]" }, "Back to log in")));
     if (!role)
         return (React.createElement(AuthShell, { roleIntro: true, title: "Welcome to Musafirrrr", sub: "Two ways in. Pick the one that sounds like you.", footer: React.createElement("p", { className: "text-[14px] text-slatey" }, "Already have an account? ", React.createElement(Link, { to: "/login", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Log in")) },
             React.createElement("div", { className: "mt-8 space-y-3.5" }, [['TRAVELLER', 'I\'m a traveller', 'Find group trips, save the ones you like and enquire directly.', 'compass'],
@@ -129,11 +203,19 @@ function SignupPage({ params }) {
         setBusy(false);
         }
     };
+    const verifyModal = sent ? React.createElement(VerifyModal, { email: sent,
+        onClose: () => setSent(null),
+        onDone: (user) => {
+            setSent(null);
+            toast("Email verified. Welcome to Musafirrrr!");
+            go(user.role === 'ORGANIZER' ? '/organizer/create' : '/traveller/dashboard');
+        }
+    }): null;
     const signupFooter = React.createElement(React.Fragment, null,
         React.createElement("p", { className: "text-[14px] text-slatey" }, "Already have an account? ",
             React.createElement(Link, { to: "/login", className: "font-semibold hover:text-earth underline underline-offset-4" }, "Log in")),
         React.createElement("p", { className: "text-[12px] text-muted" }, role === 'TRAVELLER' ? "Save trips to your traveller account and find them whenever you sign in." : "Your community profile is just the beginning. Add your first trip next."));
-    return (React.createElement(AuthShell, { travellerIntro: role === 'TRAVELLER', communityIntro: role === 'ORGANIZER', footer: signupFooter, title: role === 'TRAVELLER' ? 'Create your traveller account' : 'Create your community profile', sub: role === 'TRAVELLER' ? 'Saved trips and enquiries, all in one place.' : 'This becomes your public page on Musafirrrr.' },
+    const page = (React.createElement(AuthShell, { travellerIntro: role === 'TRAVELLER', communityIntro: role === 'ORGANIZER', footer: signupFooter, title: role === 'TRAVELLER' ? 'Create your traveller account' : 'Create your community profile', sub: role === 'TRAVELLER' ? 'Saved trips and enquiries, all in one place.' : 'This becomes your public page on Musafirrrr.' },
         React.createElement("button", { onClick: () => setRole(''), className: "mt-4 inline-flex items-center gap-1.5 text-[13.5px] text-slatey hover:text-ink" },
             React.createElement(Icon, { name: "chevL", size: 15 }),
             " Change account type"),
@@ -171,4 +253,5 @@ function SignupPage({ params }) {
                 React.createElement(TextArea, { rows: 3, value: o.bio, onChange: e => setO({ ...o, bio: e.target.value }), placeholder: "We run small-group trips across the Himalayas\u2026" })),
             React.createElement(Btn, { type: "submit", variant: "earth", size: "lg", className: "w-full", loading: busy }, busy ? 'Creating profile' : 'Create community profile'))),
         null));
+    return React.createElement(React.Fragment, null, page, verifyModal);
 }
