@@ -1,7 +1,20 @@
 # Musafirrrr — Group Trips Marketplace
 
 Same website as before, now split into small files you can edit in VS Code.
-No build step, no npm: just open `index.html` (or use the VS Code **Live Server** extension).
+No build step needed to run it: just open `index.html` (or use the VS Code **Live Server** extension).
+
+### Tailwind CSS
+Tailwind is prebuilt into `assets/css/tailwind.css` (committed, so hosting needs nothing extra).
+Only classes found in `index.html` and `src/**/*.js` are included, so **after adding new Tailwind
+classes or editing `src/config/tailwind.config.js`, rebuild it**:
+
+```
+npm install          # once
+npm run build:css    # one-off build
+npm run watch:css    # rebuilds automatically while you edit
+```
+
+Write class names in full (`'bg-ok'`, not `'bg-' + tone`) so the build can find them.
 
 ## Folder structure
 
@@ -37,7 +50,7 @@ src/
 
 | I want to change...            | Edit this                                   |
 |--------------------------------|---------------------------------------------|
-| Colours / fonts                | `src/config/tailwind.config.js`             |
+| Colours / fonts                | `src/config/tailwind.config.js`, then `npm run build:css` |
 | Demo trips / organizers        | `src/data/*.data.js`                        |
 | Business logic (login, trips)  | `src/backend/services/*.service.js`         |
 | A page's look                  | `src/pages/...`                             |

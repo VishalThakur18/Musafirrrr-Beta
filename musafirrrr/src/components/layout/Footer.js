@@ -9,7 +9,7 @@ function Footer() {
     const cols = [
         ['Explore', [['All trips', '/explore'], ['Destinations', '/explore'], ['Categories', '/explore?cat=Trek'], ['Saved trips', '/saved']]],
         ['For communities', [['List a trip', '/for-communities'], ['Organizer login', '/login?role=ORGANIZER'], ['How it works', '/how-it-works'], ['Create a trip', '/organizer/create']]],
-        ['Company', [['About', '/how-it-works'], ['Contact', '/how-it-works'], ['Terms', '/how-it-works'], ['Privacy', '/how-it-works']]]
+        ['Company', [['About', '/about'], ['Contact', '/contact'], ['Terms', '/terms'], ['Privacy', '/privacy']]]
     ];
     return (React.createElement("footer", { className: "bg-ink text-white mt-24" },
         React.createElement("div", { className: "max-w-shell mx-auto px-5 lg:px-8 py-14 md:py-16" },
@@ -31,5 +31,5 @@ function Footer() {
                     "\u00A9 ",
                     new Date().getFullYear(),
                     " Musafirrrr. Made for travellers and the people who take them places."),
-                React.createElement("span", null, "Demo build \u2014 trips and organizers shown here are sample data.")))));
+                React.createElement("span", null, "Version ", APP_VERSION, " \u00b7 Demo build")))));
 }

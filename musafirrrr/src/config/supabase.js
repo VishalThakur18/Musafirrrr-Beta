@@ -9,5 +9,3 @@ window.sbClient = window.supabase.createClient(
   SUPABASE_ANON_KEY,
   { auth: { flowType: "pkce" } }
 );
-
-console.log("Supabase initialized:", !!window.sbClient);
