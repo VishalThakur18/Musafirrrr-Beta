@@ -68,6 +68,14 @@ function App() {
         page = React.createElement(OrganizerPage, { slug: parts[1] });
     else if (path === '/how-it-works')
         page = React.createElement(HowItWorksPage, null);
+    else if (path === '/about')
+        page = React.createElement(AboutPage, null);
+    else if (path === '/contact')
+        page = React.createElement(ContactPage, null);
+    else if (path === '/terms')
+        page = React.createElement(TermsPage, null);
+    else if (path === '/privacy')
+        page = React.createElement(PrivacyPage, null);
     else if (path === '/for-communities')
         page = React.createElement(ForCommunitiesPage, null);
     else if (path === '/login')

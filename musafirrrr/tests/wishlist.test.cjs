@@ -104,7 +104,7 @@ const ids = () => Array.from(service.ids());
         React: { createElement: (type, props, ...children) => ({ type, props: props || {}, children }), Fragment: 'fragment' },
         cls: (...x) => x.filter(Boolean).join(' '),
         wishlistService: service, Icon: 'Icon', Link: 'Link', Btn: 'Btn', Logo: 'Logo',
-        EmptyState: 'EmptyState', Avatar: 'Avatar', OrgLogo: 'OrgLogo', waLink: () => '#'
+        EmptyState: 'EmptyState', Avatar: 'Avatar', OrgLogo: 'OrgLogo', waLink: () => '#', APP_VERSION: 'test'
     });
     for (const file of ['src/components/shared/TripCard.js', 'src/components/layout/Navbar.js', 'src/components/layout/Footer.js', 'src/components/layout/MobileTabs.js', 'src/middleware/auth.guard.js']) vm.runInContext(source(file), context);
     const links = tree => !tree || typeof tree !== 'object' ? [] : [

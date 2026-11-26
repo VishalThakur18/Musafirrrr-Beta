@@ -1,9 +1,15 @@
 /* ============================================================
    TAILWIND THEME CONFIG
-   Must load AFTER the Tailwind CDN script and BEFORE the app.
    Edit colours, fonts, shadows here to re-theme the whole site.
+   Used by the Tailwind CLI (not loaded in the browser). After changing
+   this file or adding new Tailwind classes, rebuild the CSS:
+     npm run build:css      (or `npm run watch:css` while editing)
    ============================================================ */
-tailwind.config = {
+module.exports = {
+  content: {
+    relative: true,
+    files: ['../../index.html', '../**/*.js']
+  },
   theme: {
     extend: {
       colors: {

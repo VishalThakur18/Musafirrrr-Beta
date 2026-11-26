@@ -36,7 +36,9 @@ body.is-booting.is-revealing #root { opacity:1; }
 <link rel="stylesheet" href="src/features/organizerDashboard/styles/organizerDashboard.css?v=20261027-analytics-button-1">
 <link rel="stylesheet" href="src/features/organizerDashboard/styles/finance.css">
 
-<!-- Tailwind (CDN) + our theme config (config must come right after the CDN script) -->
+<!-- Tailwind, prebuilt from src/config/tailwind.config.js. Rebuild with `npm run build:css`
+     after adding new Tailwind classes. Kept last so it overrides like the old CDN did. -->
+<link rel="stylesheet" href="assets/css/tailwind.css">
 
 </head>
 <body class="is-booting">
@@ -47,8 +49,6 @@ body.is-booting.is-revealing #root { opacity:1; }
 <button id="boot-retry" type="button" hidden onclick="location.reload()">Try again</button>
 </div>
 <script src="src/core/startup.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="src/config/tailwind.config.js"></script>
 <!-- React mounts here -->
 <div id="root" inert aria-busy="true"></div>
 
@@ -144,6 +144,8 @@ body.is-booting.is-revealing #root { opacity:1; }
 <script src="src/pages/public/OrganizerPage.js"></script>
 <script src="src/pages/public/HowItWorksPage.js"></script>
 <script src="src/pages/public/ForCommunitiesPage.js"></script>
+<script src="src/pages/public/CompanyPages.js"></script>
+<script src="src/pages/public/LegalPages.js"></script>
 
 <!-- 7b. AUTH PAGES -->
 <script src="src/pages/auth/AuthShell.js"></script>

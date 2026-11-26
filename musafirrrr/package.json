@@ -1,0 +1,13 @@
+{
+  "name": "musafirrrr",
+  "version": "1.0.0-beta.1",
+  "private": true,
+  "description": "Static site. npm is only needed to rebuild assets/css/tailwind.css after adding Tailwind classes.",
+  "scripts": {
+    "build:css": "tailwindcss -c src/config/tailwind.config.js -i assets/css/tailwind.input.css -o assets/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -c src/config/tailwind.config.js -i assets/css/tailwind.input.css -o assets/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

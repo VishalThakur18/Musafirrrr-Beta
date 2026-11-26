@@ -7,6 +7,9 @@
 /** localStorage key under which the whole app state is saved. */
 const LS_KEY = 'musafirrrr.v1';
 
+/** Platform version shown in the footer. */
+const APP_VERSION = '1.0.0-beta.1';
+
 /** Trip categories. */
 /* ---------- search module ---------- */
 const CATEGORIES = ['Trek', 'Beach', 'Mountains', 'Backpacking', 'Weekend', 'Adventure', 'International'];
