@@ -525,3 +525,85 @@ html { scroll-behavior: smooth; }
  .public-profile-stat > div:first-child { font-size:22px; }
  .public-profile-reviews { padding:20px; }
 }
+
+/* Phone layouts: preserve readable content and touch targets, reduce decorative space. */
+@media (max-width: 767px) {
+  html { scrollbar-gutter: auto; }
+  input:not([type=checkbox]):not([type=radio]), body select, body textarea {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px; /* Prevent focus zoom on iOS. */
+  }
+  .site-navbar button[aria-label="Menu"],
+  [role=dialog] button[aria-label="Close"],
+  .trip-card__save-button { min-width: 44px; min-height: 44px; }
+  .site-navbar > div + div { max-height: calc(100dvh - 72px - env(safe-area-inset-top, 0px)); overflow-y: auto; }
+  .site-navbar a { overflow-wrap: anywhere; }
+  .trip-card { border-radius: 22px; }
+  .trip-card__photo { height: clamp(170px, 48vw, 240px); }
+  .trip-card__note { padding: 0 16px 16px; }
+  .trip-card__note h3 { font-size: 18px; line-height: 1.35; min-height: 0; margin: 8px 0; }
+  .trip-card__eyebrow, .trip-card__per { font-size: 12px; }
+  .trip-card__organizer { white-space: normal; flex-wrap: wrap; gap: 6px; }
+  .trip-card__organizer > span { overflow-wrap: anywhere; }
+  .trip-card__dates { margin: 10px 0; font-size: 13px; }
+  .trip-card__footer strong { font-size: 22px; }
+  .trip-card__footer { flex-wrap: wrap; }
+  .trip-card__spots { margin: 8px 0 12px; }
+  .trip-card .trip-compare-control { min-height: 44px; }
+  .trip-card-grid { grid-auto-rows: auto; row-gap: 20px; }
+  .trip-gallery__slide { height: clamp(210px, 65vw, 330px); }
+  .section-heading { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .section-heading > div { min-width: 0; }
+  .section-heading h2 { font-size: clamp(24px, 5.8vw, 28px); }
+  .section-heading p { font-size: 14px; line-height: 1.65; }
+  .home-hero > .relative { padding-top: 36px; padding-bottom: 28px; }
+  .home-hero__title { font-size: clamp(38px, 10.5vw, 58px); line-height: 1.05; }
+  .home-hero__eyebrow { font-size: 12px; letter-spacing: .09em; line-height: 1.6; }
+  .home-hero__description { font-size: 16px; line-height: 1.65; }
+  .home-hero__playback, .home-hero .u-scroll button { min-height: 44px; }
+  .home-motion > section { padding-top: 40px; }
+  .home-motion > section > .p-7 { padding: 20px; }
+  .home-motion > section:last-child .relative.p-8 { padding: 24px 20px; }
+  .home-motion > section:last-child h2 { font-size: 28px; line-height: 1.15; }
+  .home-motion > section:last-child p { font-size: 15px; }
+  .traveller-auth { padding: 20px; gap: 24px; min-height: 0; }
+  .traveller-auth .traveller-slideshow__card { height: 350px; border-radius: 22px; }
+  .traveller-slideshow__location { top: 16px; left: 16px; padding: 7px 12px; }
+  .traveller-slideshow__copy { bottom: 80px; }
+  .traveller-slideshow__copy h2 { font-size: 34px; line-height: 1.08; }
+  .traveller-slideshow__copy p { font-size: 13px; line-height: 1.6; margin-top: 12px; }
+  .traveller-slideshow__eyebrow { font-size: 11px; letter-spacing: .08em; margin-bottom: 10px; }
+  .traveller-slideshow__bottom { bottom: 16px; }
+  .traveller-auth__fields > h1 { font-size: 26px; }
+  .role-auth .traveller-auth__fields > div > button { padding: 16px 36px 16px 16px; }
+  .community-hero-content { padding: 24px 20px; }
+  .community-hero-title { font-size: clamp(30px, 8vw, 40px); }
+  .community-hero-description { font-size: 15px; line-height: 1.7; margin-top: 16px; }
+  .community-hero-slideshow { min-height: 260px; }
+  .consistent-page .page-card, .consistent-page .page-hero { border-radius: 20px; }
+  .consistent-page .page-card.p-6 { padding: 20px; }
+  .consistent-page > .py-16 { padding-block: 40px; }
+  .public-profile-summary { padding: 20px; }
+  .public-profile-stats { gap: 8px; }
+  .public-profile-stat { padding: 12px 8px; }
+  .public-profile-stat > div:first-child { font-size: 22px; }
+  .public-profile-tab { padding-inline: 12px; font-size: 13px; }
+  .compare-heading { flex-wrap: wrap; }
+  .compare-tray__list button, .compare-tray__top button { min-height: 44px; min-width: 44px; }
+  .compare-tray__body > .compare-primary { min-height: 44px; }
+  .org-stat-grid > div { min-width: 0; }
+  .org-search label { min-width: 0; flex-basis: 100%; }
+  .org-content > .max-w-2xl > .rounded-2xl { padding: 18px; }
+  .org-panel__heading a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+@media (max-width: 359px) {
+  .traveller-auth { padding-inline: 16px; }
+  .traveller-auth .traveller-slideshow__card { height: 340px; }
+  .traveller-slideshow__copy h2 { font-size: 30px; }
+  .traveller-slideshow__dots button { width: 44px; }
+  .public-profile-stats { grid-template-columns: 1fr; }
+  .public-profile-stat { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .org-stat-grid { grid-template-columns: minmax(0, 1fr); }
+}
