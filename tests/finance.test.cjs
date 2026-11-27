@@ -79,7 +79,7 @@ render(context.FinancialTransactionsTable({ entries: [populated], trips: [], onV
 render(context.TripFinanceSummary({ trips: [{ id: 'trip', title: 'Trip' }], rows: [{ tripId: 'trip', currency: 'INR', paymentsReceived: 1234.5 }], currency: 'INR', onSelect() {} }));
 render(context.OutstandingBalances({ balances: [{ bookingId: 'b', tripId: 'trip', agreedAmount: 2000, outstandingAmount: 765.5 }], currency: 'INR' }));
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map(x => x[1]).filter(x => !x.startsWith('http'));
+const scripts = require('../scripts/build-js.cjs').readScriptList(html);
 scripts.forEach(file => assert.ok(fs.existsSync(path.join(root, file)), file));
 assert.ok(scripts.indexOf('src/features/organizerDashboard/finance/finance.model.js') < scripts.indexOf('src/features/organizerDashboard/pages/RevenueFinancePage.js'));
 assert.ok(scripts.indexOf('src/features/organizerDashboard/pages/RevenueFinancePage.js') < scripts.indexOf('src/App.js'));

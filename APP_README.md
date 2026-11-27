@@ -16,6 +16,21 @@ npm run watch:css    # rebuilds automatically while you edit
 
 Write class names in full (`'bg-ok'`, not `'bg-' + tone`) so the build can find them.
 
+### JavaScript bundle
+On `localhost`, `127.0.0.1` and `file://` the page loads every file in `src/` separately, so edits
+show up on refresh with no build. Everywhere else (the hosted site) it loads `assets/js/app.min.js`,
+one minified file built from the same scripts in the same order: 1 request instead of 87.
+**Before deploying, rebuild it** (the bundle is committed, like `tailwind.css`):
+
+```
+npm run build:js     # bundle + update its ?v= cache-busting hash in index.html
+npm run build        # build:css and build:js together
+npm test             # includes a check that fails if the bundle is out of date
+```
+
+To try the bundle locally, open `http://localhost:…/?bundle`. To debug the hosted site with the
+original files, open it with `?source`.
+
 ## Folder structure
 
 ```
@@ -55,9 +70,9 @@ src/
 | Business logic (login, trips)  | `src/backend/services/*.service.js`         |
 | A page's look                  | `src/pages/...`                             |
 | Navbar / footer                | `src/components/layout/...`                 |
-| Add a new page                 | create file in `src/pages`, add a `<script>` tag in `index.html` **before** `src/App.js`, add a route in `src/App.js` |
+| Add a new page                 | create file in `src/pages`, add it to the script list in `index.html` **before** `src/App.js`, add a route in `src/App.js`, then `npm run build:js` |
 
-**Important:** files are plain scripts sharing one global scope, so the `<script>` order in `index.html` matters. If you add a file, place it before the files that use it.
+**Important:** files are plain scripts sharing one global scope, so the order of the script list in `index.html` (between `app-scripts:start` and `app-scripts:end`) matters. If you add a file, place it before the files that use it.
 
 ## Changing trip photos across the website
 
@@ -122,7 +137,7 @@ over both. Remove an override to let a community manage that trip's images.
 - Organizer: `organizer@demo.com` / `password`
 
 ## Host on GitHub Pages
-1. Push this folder to a GitHub repo (keep `index.html` at the root).
+1. Run `npm run build`, then push this folder to a GitHub repo (keep `index.html` at the root).
 2. Repo → Settings → Pages → Source: *Deploy from a branch* → `main` / `(root)`.
 3. Open `https://<your-username>.github.io/<repo-name>/`.
 

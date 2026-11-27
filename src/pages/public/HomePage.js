@@ -62,6 +62,7 @@ function Hero() {
     }, []);
     return (React.createElement("section", { ref: heroRef, className: "relative home-hero" },
         React.createElement("div", { className: "absolute inset-0 overflow-hidden" },
+            React.createElement("img", { src: "assets/videos/home-hero-poster.webp", alt: "", "aria-hidden": "true", fetchpriority: "high", decoding: "async", className: "home-hero__poster" }),
             React.createElement("video", { ref: videoRef, src: "assets/videos/home-hero.mp4", autoPlay: true, muted: true, loop: true, playsInline: true, preload: "auto", "aria-hidden": "true", tabIndex: -1, onLoadedData: () => setVideoReady(true), onPlaying: () => { setVideoReady(true); setPlaying(true); }, onPause: () => setPlaying(false), className: cls("home-hero__video", videoReady && "home-hero__video--ready") }),
             React.createElement("div", { className: "home-hero__overlay" })),
         React.createElement("div", { className: "relative max-w-shell mx-auto px-5 lg:px-8 pt-16 pb-10 md:pt-24 md:pb-16" },
