@@ -91,7 +91,9 @@
 
 /* Native looping hero video: fixed cover area prevents layout shifts. */
 .home-hero { background: #132025; isolation: isolate; }
-.home-hero__video { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; opacity: 0; transition: opacity 320ms ease-out; }
+.home-hero__video { position: relative; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; opacity: 0; transition: opacity 320ms ease-out; }
+/* Lightweight first frame painted immediately; the video fades in over it once playable. */
+.home-hero__poster { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
 .home-hero__video--ready { opacity: 1; }
 /* A short shared entry fade also covers navigation through browser history. */
 @keyframes site-page-enter { from { opacity: 0; } to { opacity: 1; } }
@@ -118,6 +120,11 @@
   .home-hero--parallax .home-hero__video {
     height: calc(100% + 48px);
     margin-top: -24px;
+    transform: translate3d(0, var(--hero-offset, 0px), 0);
+  }
+  .home-hero--parallax .home-hero__poster {
+    height: calc(100% + 48px);
+    top: -24px;
     transform: translate3d(0, var(--hero-offset, 0px), 0);
   }
 }

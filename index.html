@@ -23,8 +23,27 @@ body.is-booting.is-revealing #root { opacity:1; }
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script>
+(function () {
+  function preload(as, href, priority) {
+    var link = document.createElement('link');
+    link.rel = 'preload'; link.as = as; link.href = href;
+    if (priority) link.fetchPriority = priority;
+    document.head.appendChild(link);
+  }
+  // Start the home hero poster download before React renders it (home route only).
+  if ((location.hash.slice(1).split('?')[0] || '/') === '/') preload('image', 'assets/videos/home-hero-poster.webp', 'high');
+
+  // Local development loads the source files listed at the end of <body>; everywhere else loads
+  // the bundle built by `npm run build:js` (which also updates the ?v= hash below).
+  // ?source or ?bundle in the URL forces either mode.
+  var query = location.search;
+  var local = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  var useSource = /[?&]source(=|&|$)/.test(query) || (local && !/[?&]bundle(=|&|$)/.test(query));
+  window.APP_BUNDLE = useSource ? null : 'assets/js/app.min.js?v=799439d180';
+  if (window.APP_BUNDLE) preload('script', window.APP_BUNDLE);
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/jpeg" href="src/assets/logo.jpeg">
@@ -62,130 +81,142 @@ body.is-booting.is-revealing #root { opacity:1; }
   APPLICATION SCRIPTS — ORDER MATTERS (each file uses things defined above it).
   1 config -> 2 utils/assets -> 3 data -> 4 backend -> 5 middleware
   -> 6 UI components -> 7 pages -> 8 App -> 9 main (starts the app)
+
+  Local development (localhost, 127.0.0.1, file://) loads these source files one by one,
+  so edits show up on refresh. Everywhere else loads assets/js/app.min.js, a minified bundle
+  of the same files in the same order (the choice is made in <head>). After changing any file
+  below (or this list), run `npm run build:js` before deploying.
 -->
+<script>
+(function () {
+  var files = [ // app-scripts:start
+    // 1. CONFIG
+    'src/config/constants.js',
+    'src/config/destination-images.js',
+    'src/config/image-variants.js',
+    'src/config/supabase.js',
 
-<!-- 1. CONFIG -->
-<script src="src/config/constants.js"></script>
-<script src="src/config/destination-images.js"></script>
-<script src="src/config/image-variants.js"></script>
-<script src="src/config/supabase.js"></script>
+    // 1b. REACT GLOBALS
+    'src/core/react-globals.js',
 
-<!-- 1b. REACT GLOBALS -->
-<script src="src/core/react-globals.js"></script>
+    // 2. UTILITIES
+    'src/utils/helpers.js',
+    'src/utils/format.js',
+    'src/utils/links.js',
 
-<!-- 2. UTILITIES -->
-<script src="src/utils/helpers.js"></script>
-<script src="src/utils/format.js"></script>
-<script src="src/utils/links.js"></script>
+    // 2b. ASSETS (images + icons)
+    'src/assets/imagery.js',
+    'src/assets/photo-tools.js',
+    'src/assets/icons.js',
 
-<!-- 2b. ASSETS (images + icons) -->
-<script src="src/assets/imagery.js"></script>
-<script src="src/assets/photo-tools.js"></script>
-<script src="src/assets/icons.js"></script>
+    // 3. SEED DATA
+    'src/data/organizers.data.js',
+    'src/data/trip.factory.js',
+    'src/data/trips.data.js',
+    'src/data/users.data.js',
+    'src/data/enquiries.data.js',
 
-<!-- 3. SEED DATA -->
-<script src="src/data/organizers.data.js"></script>
-<script src="src/data/trip.factory.js"></script>
-<script src="src/data/trips.data.js"></script>
-<script src="src/data/users.data.js"></script>
-<script src="src/data/enquiries.data.js"></script>
+    // 4. BACKEND (mock database + services)
+    'src/backend/store.js',
+    'src/backend/services/data.service.js',
+    'src/backend/services/auth.service.js',
+    'src/backend/services/trip.service.js',
+    'src/backend/services/organizer.service.js',
+    'src/backend/services/wishlist.service.js',
+    'src/backend/services/finance.service.js',
+    'src/backend/services/enquiry.service.js',
+    'src/backend/services/review.service.js',
+    'src/features/organizerDashboard/services/analytics.service.js',
 
-<!-- 4. BACKEND (mock database + services) -->
-<script src="src/backend/store.js"></script>
-<script src="src/backend/services/data.service.js?v=20261027-trip-loading-1"></script>
-<script src="src/backend/services/auth.service.js"></script>
-<script src="src/backend/services/trip.service.js?v=20261027-trip-loading-1"></script>
-<script src="src/backend/services/organizer.service.js?v=20261026-followups-3"></script>
-<script src="src/backend/services/wishlist.service.js"></script>
-<script src="src/backend/services/finance.service.js"></script>
-<script src="src/backend/services/enquiry.service.js"></script>
-<script src="src/backend/services/review.service.js"></script>
+    // 5. MIDDLEWARE (hooks, router, guard, toast)
+    'src/middleware/store.hooks.js',
+    'src/middleware/toast.js',
+    'src/middleware/router.js',
+    'src/middleware/auth.guard.js',
+    'src/features/compare/compare.service.js',
+    'src/features/compare/compare.state.js',
 
+    // 6a. UI COMPONENTS
+    'src/components/ui/Icon.js',
+    'src/components/ui/Button.js',
+    'src/components/ui/Form.js',
+    'src/components/ui/Badges.js',
+    'src/components/ui/Modal.js',
+    'src/components/ui/Feedback.js',
+    'src/components/ui/Layout.js',
+    'src/components/ui/ScrollReveal.js',
+    'src/components/ui/SiteMotion.js',
 
-<script src="src/features/organizerDashboard/services/analytics.service.js"></script>
+    // 6b. SHARED COMPONENTS
+    'src/components/shared/TripCard.js',
+    'src/components/shared/ContactButtons.js',
+    'src/components/shared/SearchBar.js',
+    'src/components/shared/PasswordCard.js',
 
-<!-- 5. MIDDLEWARE (hooks, router, guard, toast) -->
-<script src="src/middleware/store.hooks.js"></script>
-<script src="src/middleware/toast.js"></script>
-<script src="src/middleware/router.js"></script>
-<script src="src/middleware/auth.guard.js"></script>
+    // 6c. LAYOUT COMPONENTS
+    'src/components/layout/Logo.js',
+    'src/components/layout/Navbar.js',
+    'src/components/layout/MobileTabs.js',
+    'src/components/layout/Footer.js',
 
-<script src="src/features/compare/compare.service.js"></script>
-<script src="src/features/compare/compare.state.js"></script>
+    // 7a. PUBLIC PAGES
+    'src/pages/public/HomePage.js',
+    'src/pages/public/ExplorePage.js',
+    'src/pages/public/TripDetailPage.js',
+    'src/pages/public/OrganizerPage.js',
+    'src/pages/public/HowItWorksPage.js',
+    'src/pages/public/ForCommunitiesPage.js',
+    'src/pages/public/CompanyPages.js',
+    'src/pages/public/LegalPages.js',
 
-<!-- 6a. UI COMPONENTS -->
-<script src="src/components/ui/Icon.js"></script>
-<script src="src/components/ui/Button.js"></script>
-<script src="src/components/ui/Form.js"></script>
-<script src="src/components/ui/Badges.js"></script>
-<script src="src/components/ui/Modal.js"></script>
-<script src="src/components/ui/Feedback.js"></script>
-<script src="src/components/ui/Layout.js"></script>
-<script src="src/components/ui/ScrollReveal.js"></script>
-<script src="src/components/ui/SiteMotion.js"></script>
+    // 7b. AUTH PAGES
+    'src/pages/auth/AuthShell.js',
+    'src/pages/auth/LoginPage.js',
+    'src/pages/auth/SignupPage.js',
 
-<!-- 6b. SHARED COMPONENTS -->
-<script src="src/components/shared/TripCard.js?v=20261027-trip-loading-1"></script>
-<script src="src/components/shared/ContactButtons.js"></script>
-<script src="src/components/shared/SearchBar.js"></script>
+    // 7c. TRAVELLER PAGES
+    'src/pages/traveller/SavedPage.js',
+    'src/pages/traveller/TravellerDashboard.js',
+    'src/pages/traveller/TravellerMyTrips.js',
+    'src/pages/traveller/TravellerProfile.js',
+    'src/pages/traveller/ReviewsSection.js',
 
-<script src="src/components/shared/PasswordCard.js"></script>
+    // 7d. ORGANIZER Dashboard PAGES
+    'src/features/organizerDashboard/services/liveUpdates.js',
+    'src/features/organizerDashboard/components/OrganizerMotion.js',
+    'src/features/organizerDashboard/components/OrganizerShell.js',
+    'src/features/organizerDashboard/components/OrganizerAnalyticsCharts.js',
+    'src/features/organizerDashboard/components/OrganizerTripPerformance.js',
+    'src/features/organizerDashboard/pages/OrganizerDashboard.js',
+    'src/features/organizerDashboard/pages/OrganizerLeads.js',
+    'src/features/organizerDashboard/components/OrganizerTripSheet.js',
+    'src/features/organizerDashboard/pages/OrganizerTrips.js',
+    'src/features/organizerDashboard/pages/OrganizerDepartures.js',
+    'src/features/organizerDashboard/finance/finance.model.js',
+    'src/features/organizerDashboard/finance/FinancialEntryForm.js',
+    'src/features/organizerDashboard/finance/FinanceBookings.js',
+    'src/features/organizerDashboard/finance/FinanceMetricBreakdown.js',
+    'src/features/organizerDashboard/finance/TravellerPayments.js',
+    'src/features/organizerDashboard/pages/RevenueFinancePage.js',
+    'src/features/organizerDashboard/pages/TripWizard.js',
+    'src/features/organizerDashboard/pages/OrganizerProfileEdit.js',
+    'src/features/organizerDashboard/pages/OrganizerSettings.js',
+    'src/features/compare/CompareUI.js',
 
-<!-- 6c. LAYOUT COMPONENTS -->
-<script src="src/components/layout/Logo.js"></script>
-<script src="src/components/layout/Navbar.js"></script>
-<script src="src/components/layout/MobileTabs.js"></script>
-<script src="src/components/layout/Footer.js"></script>
+    // 8. ROOT APP
+    'src/App.js',
 
-<!-- 7a. PUBLIC PAGES -->
-<script src="src/pages/public/HomePage.js?v=20261027-trip-loading-1"></script>
-<script src="src/pages/public/ExplorePage.js?v=20261027-trip-loading-1"></script>
-<script src="src/pages/public/TripDetailPage.js"></script>
-<script src="src/pages/public/OrganizerPage.js"></script>
-<script src="src/pages/public/HowItWorksPage.js"></script>
-<script src="src/pages/public/ForCommunitiesPage.js"></script>
-<script src="src/pages/public/CompanyPages.js"></script>
-<script src="src/pages/public/LegalPages.js"></script>
-
-<!-- 7b. AUTH PAGES -->
-<script src="src/pages/auth/AuthShell.js"></script>
-<script src="src/pages/auth/LoginPage.js"></script>
-<script src="src/pages/auth/SignupPage.js"></script>
-
-<!-- 7c. TRAVELLER PAGES -->
-<script src="src/pages/traveller/SavedPage.js"></script>
-<script src="src/pages/traveller/TravellerDashboard.js"></script>
-<script src="src/pages/traveller/TravellerMyTrips.js"></script>
-<script src="src/pages/traveller/TravellerProfile.js"></script>
-<script src="src/pages/traveller/ReviewsSection.js"></script> 
-
-<!-- 7d. ORGANIZER Dashboard PAGES -->
-<script src="src/features/organizerDashboard/services/liveUpdates.js"></script>
-<script src="src/features/organizerDashboard/components/OrganizerMotion.js"></script>
-<script src="src/features/organizerDashboard/components/OrganizerShell.js"></script>
-<script src="src/features/organizerDashboard/components/OrganizerAnalyticsCharts.js"></script>
-<script src="src/features/organizerDashboard/components/OrganizerTripPerformance.js?v=20261027-analytics-button-1"></script>
-<script src="src/features/organizerDashboard/pages/OrganizerDashboard.js?v=20261026-followups-3"></script>
-<script src="src/features/organizerDashboard/pages/OrganizerLeads.js?v=20261027-notes-layout-3"></script>
-<script src="src/features/organizerDashboard/components/OrganizerTripSheet.js"></script>
-<script src="src/features/organizerDashboard/pages/OrganizerTrips.js"></script>
-<script src="src/features/organizerDashboard/pages/OrganizerDepartures.js"></script>
-<script src="src/features/organizerDashboard/finance/finance.model.js"></script>
-<script src="src/features/organizerDashboard/finance/FinancialEntryForm.js"></script>
-<script src="src/features/organizerDashboard/finance/FinanceBookings.js"></script>
-<script src="src/features/organizerDashboard/finance/FinanceMetricBreakdown.js"></script>
-<script src="src/features/organizerDashboard/finance/TravellerPayments.js"></script>
-<script src="src/features/organizerDashboard/pages/RevenueFinancePage.js"></script>
-<script src="src/features/organizerDashboard/pages/TripWizard.js"></script>
-<script src="src/features/organizerDashboard/pages/OrganizerProfileEdit.js"></script>
-<script src="src/features/organizerDashboard/pages/OrganizerSettings.js"></script>
-
-<script src="src/features/compare/CompareUI.js"></script>
-
-<!-- 8. ROOT APP -->
-<script src="src/App.js"></script>
-
-<!-- 9. ENTRY POINT (must be last) -->
-<script src="src/main.js"></script>
+    // 9. ENTRY POINT (must be last)
+    'src/main.js'
+  ]; // app-scripts:end
+  // APP_BUNDLE is chosen in <head>: null means load the source files.
+  (window.APP_BUNDLE ? [window.APP_BUNDLE] : files).forEach(function (src) {
+    var script = document.createElement('script');
+    script.src = src;
+    script.async = false; // run in list order
+    document.body.appendChild(script);
+  });
+})();
+</script>
 </body>
 </html>
